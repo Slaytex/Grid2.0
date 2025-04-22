@@ -4,34 +4,54 @@ Grid 2.0 is a powerful desktop application that works in conjunction with a Figm
 1. A desktop application (Grid App)
 2. A Figma plugin (Grid Plugin)
 
+## Repository Information
+- GitHub Repository: [Grid2.0](https://github.com/Slaytex/Grid2.0)
+- Main Branch: `main`
+
 ## Prerequisites
 
 - Node.js (v16 or higher)
 - npm (Node Package Manager)
 - Figma Desktop App
 - macOS (for running the desktop app)
+- TypeScript (for development)
 
 ## Installation
 
-### Desktop App Installation
+### Development Environment Setup
 
 1. Clone this repository:
 ```bash
-git clone [your-repository-url]
-cd grid
+git clone https://github.com/Slaytex/Grid2.0.git
+cd Grid2.0
 ```
 
-2. Install dependencies:
+2. Install global dependencies:
+```bash
+npm install -g typescript
+```
+
+3. Install project dependencies:
 ```bash
 npm install
 ```
 
-3. Start the application in development mode:
+4. Install Figma plugin dependencies:
+```bash
+cd figma_plugin
+npm install
+npm install --save-dev @figma/plugin-typings
+cd ..
+```
+
+### Desktop App Installation
+
+1. Start the application in development mode:
 ```bash
 npm start
 ```
 
-4. Build the application for distribution:
+2. Build the application for distribution:
 ```bash
 npm run dist
 ```
@@ -40,18 +60,9 @@ The built application will be available in the `dist` directory.
 
 ### Figma Plugin Installation
 
-1. Navigate to the Figma plugin directory:
+1. Build the plugin:
 ```bash
 cd figma_plugin
-```
-
-2. Install plugin dependencies:
-```bash
-npm install
-```
-
-3. Build the plugin:
-```bash
 npm run build
 ```
 
@@ -154,10 +165,16 @@ Common issues and solutions:
    - Ensure frames are selected before sending
    - Check the console for error messages
 
+3. **Development Issues**
+   - Make sure TypeScript is installed globally
+   - Verify all dependencies are installed
+   - Check for any npm audit warnings or vulnerabilities
+
 ## License
 
 [Your License Information]
 
 ## Contributing
 
+[Your Contributing Guidelines] 
 [Your Contributing Guidelines] 
