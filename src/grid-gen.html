@@ -1,0 +1,910 @@
+<!-- App by Chris Jacobs -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Grid 2.0</title>
+    <link rel="stylesheet" href="css/grid-gen.css">
+</head>
+<body>
+    <div id="splash-screen">
+        <img src="assets/grid-splash.png" alt="Grid 2.0">
+    </div>
+    <div id="setup-container">
+        <div class="setup-content">
+            <div class="h1-header">Monitor Setup</div>
+            <div class="cm-input-flex">
+            <input type="number" id="monitor-width" placeholder="W (in)">
+            <input type="number" id="monitor-height" placeholder="H (in)">
+            </div>
+           <button onclick="initializeGrid()">
+               <img src="assets/grid-go_white.svg" alt="Grid Icon" style="width: 20px; height: 20px; vertical-align: middle;"></button>
+            
+            <div class="divider"></div>
+            <div class="h1-header">Monitor Presets</div>
+            <div id="monitor-presets"></div>
+        </div>
+       
+    </div>
+    <div class="footer-credit" id="withlove">
+        Built with <span class="heart">♥</span> by Chris Jacobs for 42 Dot UX team | v2.0
+    </div>
+
+    <canvas id="grid-canvas"></canvas>
+    <div id="dimensions-display"></div>
+    
+    <div id="container"></div>
+
+    <div id="control-panel">
+        <div id="control-panel-header" style="height: 10px; border-bottom: 1px solid #3b3b3b;">
+            <!-- <div style="width: 100%; height: 20px; border-bottom: 1px solid #5b5b5b;"></div> -->
+        </div>
+        <div class="h1-header">Spawn Window</div>
+        <div class="frame-select-container">
+            <div class="dropdown-wrapper">
+                <select id="frame-select" class="frame-dropdown">
+                    <option value="" disabled selected>Select Screen Size</option>
+                </select>
+                <img src="assets/arrow.svg" class="dropdown-arrow" alt="▼">
+            </div>
+        </div>
+        <div class="input-group" style="display: none;">
+            <label>URL</label>
+            <input type="text" id="url-input" value="https://www.figma.com/mirror" style="width: 100%;">
+        </div>
+        <div class="cm-input-flex">
+            <input type="number" id="width-input" value="10" min="1" max="66" placeholder="W (in)">
+            <img src="assets/close.svg" alt="X" style="width: 20px; height: 20px; vertical-align: middle;">
+            <input type="number" id="height-input" value="10" min="1" max="37" placeholder="H (in)">
+        </div>
+        <!-- Comment out the Launch Frame button -->
+        <!-- <button id="launch-frame-button">Launch Frame</button> -->
+        <button id="spawn-button">Spawn Empty Frame</button>
+        <button id="spawn-image-button">Spawn Image</button>
+        <input type="file" id="image-input" accept="image/*" style="display: none;">
+        <button id="close-all-button">Close All Frames</button>
+        <button id="border-toggle">Border Off</button>
+        <div class="divider"></div>
+        <div class="h1-header">Frame Presets</div>
+        <div id="active-windows"></div>
+        <div class="divider"></div>
+        <div class="h1-header">Figma Frames</div>
+        <div id="figma-frames-container">
+            <!-- Frames will be added here dynamically -->
+        </div>
+    </div>
+    
+    <div class="grid-cursor"></div>
+    <div id="brightness-control">
+        <div class="controls-wrapper">
+            <button id="toggle-grid" class="grid-toggle">
+                <img src="assets/grid-go.svg" alt="Toggle Grid">
+            </button>
+            <input 
+                type="range" 
+                id="brightness-slider" 
+                min="0" 
+                max="100" 
+                value="50"
+                class="slider">
+        </div>
+    </div>
+
+    <script src="grid.js"></script>
+    <script>
+        // At the start of your script
+        document.body.style.backgroundColor = '#000000';
+
+        // Load monitor presets
+        fetch('monitor-presets.json')
+            .then(response => response.json())
+            .then(data => {
+                console.log('[Renderer] Loading monitor presets:', data);
+                const presetsContainer = document.getElementById('monitor-presets');
+                if (!presetsContainer) {
+                    console.error('Could not find #monitor-presets container');
+                    return;
+                }
+                presetsContainer.innerHTML = ''; // Clear existing buttons
+                data.presets.forEach(preset => {
+                    console.log('[Renderer] Processing preset:', preset);
+                    const button = document.createElement('button');
+                    // Display name, dimensions in inches, and pixel dimensions if available
+                    // Convert cm to inches for display
+                    const widthInches = (preset.width * 0.393701).toFixed(1);
+                    const heightInches = (preset.height * 0.393701).toFixed(1);
+                    let buttonText = `${preset.name} | ${widthInches}×${heightInches}"`;
+                    if (preset.pxWidth && preset.pxHeight) {
+                        buttonText += ` (${preset.pxWidth}×${preset.pxHeight}px)`;
+                    }
+                    button.textContent = buttonText;
+                    
+                    // Store ALL preset data in dataset attributes - still in cm internally
+                    button.dataset.widthCm = preset.width;
+                    button.dataset.heightCm = preset.height;
+                    button.dataset.pxWidth = preset.pxWidth || 'null'; // Use 'null' string for consistency
+                    button.dataset.pxHeight = preset.pxHeight || 'null';
+                    button.dataset.ppi = preset.ppi || 'null';
+                    
+                    button.onclick = () => {
+                        console.log('[Renderer] Preset button clicked. Dataset:', button.dataset);
+                        // Convert cm to inches for the input fields
+                        const widthInches = (parseFloat(button.dataset.widthCm) * 0.393701).toFixed(1);
+                        const heightInches = (parseFloat(button.dataset.heightCm) * 0.393701).toFixed(1);
+                        document.getElementById('monitor-width').value = widthInches;
+                        document.getElementById('monitor-height').value = heightInches;
+                        // Store the full preset data globally or pass it to initializeGrid if needed
+                        window.selectedPresetData = button.dataset; // Store globally for initializeGrid to access
+                        initializeGrid();
+                    };
+                    presetsContainer.appendChild(button);
+                });
+                console.log('[Renderer] Finished loading monitor presets.');
+            })
+            .catch(error => console.error('Error loading presets:', error));
+
+        console.log('Checking if initializeGrid is available:', typeof initializeGrid);
+        // We'll add window spawning functionality here
+        // Make control panel draggable
+        const controlPanel = document.getElementById('control-panel');
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        document.getElementById('control-panel-header').addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        function dragStart(e) {
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            isDragging = true;
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                xOffset = currentX;
+                yOffset = currentY;
+                controlPanel.style.transform = 
+                    `translate(${currentX}px, ${currentY}px)`;
+            }
+        }
+
+        function dragEnd() {
+            isDragging = false;
+        }
+
+        // Add this after the dragEnd function
+        const controlPanelHeader = document.getElementById('control-panel-header');
+        const controlPanelContent = document.getElementById('control-panel').children;
+        let isPanelContentVisible = true;
+        // Store original display values
+        const originalDisplayValues = Array.from(controlPanelContent).slice(1).map(el => getComputedStyle(el).display);
+
+        controlPanelHeader.addEventListener('dblclick', (e) => {
+            isPanelContentVisible = !isPanelContentVisible;
+            // Start from index 1 to skip the header (index 0)
+            for (let i = 1; i < controlPanelContent.length; i++) {
+                controlPanelContent[i].style.display = isPanelContentVisible ? originalDisplayValues[i-1] : 'none';
+            }
+        });
+
+        // Window management
+        let windows = [];
+        let presets = [];  // Store presets separately from active windows
+
+        function createWindow(config) {
+            const container = document.getElementById('container');
+            const windowEl = document.createElement('div');
+            windowEl.className = 'figma-window';
+            
+            // Add size indicator
+            const sizeIndicator = document.createElement('div');
+            sizeIndicator.className = 'size-indicator';
+            document.body.appendChild(sizeIndicator);
+
+            // Convert inches to cm internally, then to pixels using grid spacing
+            const widthCm = config.width / CM_TO_INCHES; // Convert inches to cm for internal calculations
+            const heightCm = config.height / CM_TO_INCHES; // Convert inches to cm for internal calculations
+            const pxWidth = widthCm * window.gridSystem.gridSpacingX;
+            const pxHeight = heightCm * window.gridSystem.gridSpacingY;
+            windowEl.style.width = pxWidth + 'px';
+            windowEl.style.height = pxHeight + 'px';
+            
+            // Center window
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const x = (config.x !== undefined) ? config.x : (screenWidth - pxWidth) / 2;
+            const y = (config.y !== undefined) ? config.y : (screenHeight - pxHeight) / 2;
+            windowEl.style.left = x + 'px';
+            windowEl.style.top = y + 'px';
+
+            // Add drag handle
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'window-drag-handle';
+            dragHandle.innerHTML = '<img src="./assets/arrows.svg" alt="Move">';
+            windowEl.appendChild(dragHandle);
+
+            // Add close button
+            const closeButton = document.createElement('button');
+            closeButton.className = 'window-close-button';
+            closeButton.innerHTML = '<img src="./assets/close.svg" alt="Close">';
+            closeButton.onclick = () => {
+                windowEl.remove();
+            };
+            windowEl.appendChild(closeButton);
+
+            // Add save button
+            const saveButton = document.createElement('button');
+            saveButton.className = 'window-save-button';
+            saveButton.innerHTML = '<img src="./assets/save.svg" alt="Save">';
+            saveButton.onclick = () => {
+                // Get the raw width/height values without 'px'
+                const rawWidth = windowEl.style.width.replace('px', '');
+                const rawHeight = windowEl.style.height.replace('px', '');
+                
+                // Convert to cm then to inches with one decimal place
+                const widthCm = parseFloat((parseInt(rawWidth) / window.gridSystem.gridSpacingX).toFixed(1));
+                const heightCm = parseFloat((parseInt(rawHeight) / window.gridSystem.gridSpacingY).toFixed(1));
+                const widthInches = (widthCm * CM_TO_INCHES).toFixed(1);
+                const heightInches = (heightCm * CM_TO_INCHES).toFixed(1);
+                
+                const config = {
+                    url: document.getElementById('url-input').value,
+                    width: parseFloat(widthInches), // Store as inches
+                    height: parseFloat(heightInches) // Store as inches
+                };
+                presets.push(config);
+                saveWindows();
+                updateWindowList();
+            };
+            windowEl.appendChild(saveButton);
+
+            // Add resize handle
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'resize-handle se';
+            windowEl.appendChild(resizeHandle);
+
+            const webview = document.createElement('webview');
+            webview.src = config.url;
+            webview.style.width = '100%';
+            webview.style.height = '100%';
+            webview.style.border = 'none';
+            windowEl.appendChild(webview);
+
+            container.appendChild(windowEl);
+
+            // Click-to-place functionality
+            let placementMode = false;
+            dragHandle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                placementMode = !placementMode;
+                dragHandle.style.background = placementMode ? 
+                    'rgba(0, 255, 0, 0.5)' : 'rgba(255, 165, 0, 0.5)';
+                
+                const cursor = document.querySelector('.grid-cursor');
+                if (placementMode) {
+                    cursor.style.display = 'block';
+                    document.addEventListener('mousemove', updateGridCursor);
+                } else {
+                    cursor.style.display = 'none';
+                    document.removeEventListener('mousemove', updateGridCursor);
+                }
+                
+                if (placementMode) {
+                    document.getElementById('container').addEventListener('click', placeWindow);
+                } else {
+                    document.getElementById('container').removeEventListener('click', placeWindow);
+                }
+            });
+            
+            function placeWindow(e) {
+                const absoluteX = e.clientX;
+                const absoluteY = e.clientY;
+                
+                windowEl.style.transition = 'all 0.3s ease-in-out'; // Add smooth transition
+                windowEl.style.position = 'fixed';
+                windowEl.style.left = `${absoluteX}px`;
+                windowEl.style.top = `${absoluteY}px`;
+                
+                // Remove transition after animation completes
+                setTimeout(() => {
+                    windowEl.style.transition = '';
+                }, 300); // Match the transition duration
+                
+                placementMode = false;
+                dragHandle.style.background = 'rgba(255, 165, 0, 0.5)';
+                const cursor = document.querySelector('.grid-cursor');
+                cursor.style.display = 'none';
+                document.removeEventListener('mousemove', updateGridCursor);
+                document.getElementById('container').removeEventListener('click', placeWindow);
+            }
+
+            function handleMouseMove(e) {
+                if (isResizing) {
+                    const width = initialWidth + (e.clientX - initialMouseX);
+                    const height = initialHeight + (e.clientY - initialMouseY);
+                    windowEl.style.width = `${width}px`;
+                    windowEl.style.height = `${height}px`;
+                    
+                    // Update size indicator showing inches directly
+                    sizeIndicator.style.display = 'block';
+                    const widthCm = (width/window.gridSystem.gridSpacingX);
+                    const heightCm = (height/window.gridSystem.gridSpacingY);
+                    const widthInches = (widthCm * CM_TO_INCHES).toFixed(1);
+                    const heightInches = (heightCm * CM_TO_INCHES).toFixed(1);
+                    sizeIndicator.textContent = `${widthInches}" × ${heightInches}"`;
+                    sizeIndicator.style.left = `${e.clientX + 20}px`;
+                    sizeIndicator.style.top = `${e.clientY + 20}px`;
+                }
+            }
+            
+            function handleMouseUp() {
+                if (isResizing) {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    sizeIndicator.style.display = 'none';
+                }
+            }
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                initialMouseX = e.clientX;
+                initialMouseY = e.clientY;
+                initialWidth = parseInt(windowEl.style.width);
+                initialHeight = parseInt(windowEl.style.height);
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+                e.preventDefault();
+            });
+
+            // Clean up event listeners when window is closed
+            closeButton.addEventListener('click', () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                windowEl.remove();
+            });
+
+            updateWindowList();
+            return windowEl;
+        }
+
+        function updateWindowList() {
+            const listEl = document.getElementById('active-windows');
+            listEl.innerHTML = '';
+            
+            presets.forEach((config, index) => {
+                const windowItem = document.createElement('div');
+                windowItem.style.padding = '8px';
+                windowItem.style.marginBottom = '4px';
+                windowItem.style.background = 'rgba(50, 50, 50, 0.5)';
+                windowItem.style.borderRadius = '4px';
+                windowItem.style.display = 'flex';
+                windowItem.style.justifyContent = 'space-between';
+                windowItem.style.alignItems = 'center';
+
+                const urlText = document.createElement('div');
+                // Already stored as inches, just format for display
+                const widthInches = parseFloat(config.width).toFixed(1);
+                const heightInches = parseFloat(config.height).toFixed(1);
+                urlText.textContent = `${widthInches}×${heightInches}"`;
+                urlText.style.fontSize = '12px';
+                urlText.style.flexGrow = '1';
+                windowItem.appendChild(urlText);
+
+                const launchBtn = document.createElement('button');
+                launchBtn.textContent = 'Launch';
+                launchBtn.style.padding = '4px 8px';
+                launchBtn.style.marginLeft = '8px';
+                launchBtn.style.width = 'auto';
+                launchBtn.style.fontSize = '12px';
+                launchBtn.onclick = () => {
+                    createWindow({...config, x: undefined, y: undefined});
+                };
+                windowItem.appendChild(launchBtn);
+
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '<img src="./assets/delete.svg" alt="Delete" style="width: 16px; height: 16px;">';
+                closeBtn.style.padding = '2px 6px';
+                closeBtn.style.marginLeft = '8px';
+                closeBtn.style.width = 'auto';
+                closeBtn.style.display = 'flex';
+                closeBtn.style.alignItems = 'center';
+                closeBtn.style.justifyContent = 'center';
+                closeBtn.onclick = () => {
+                    presets.splice(index, 1);
+                    saveWindows();
+                    updateWindowList();
+                };
+                windowItem.appendChild(closeBtn);
+
+                listEl.appendChild(windowItem);
+            });
+        }
+
+        function removeWindow(index) {
+            const container = document.getElementById('container');
+            container.removeChild(container.children[index]);
+            windows.splice(index, 1);
+            saveWindows();
+            updateWindowList();
+        }
+
+        function saveWindows() {
+            localStorage.setItem('savedPresets', JSON.stringify(presets));
+        }
+
+        // Update spawn button handler to use inches
+        document.getElementById('spawn-button').addEventListener('click', () => {
+            // Get values directly in inches
+            const config = {
+                url: document.getElementById('url-input').value,
+                width: parseFloat(document.getElementById('width-input').value),
+                height: parseFloat(document.getElementById('height-input').value),
+                x: undefined,
+                y: undefined
+            };
+            createWindow(config);
+        });
+
+        // Add close all windows functionality
+        document.getElementById('close-all-button').addEventListener('click', () => {
+            const container = document.getElementById('container');
+            while (container.firstChild) {
+                container.firstChild.remove();
+            }
+        });
+
+        // Load saved presets from localStorage
+        try {
+            const savedPresets = localStorage.getItem('savedPresets');
+            if (savedPresets) {
+                presets = JSON.parse(savedPresets);
+                updateWindowList();
+            }
+        } catch (e) {
+            console.error('Error loading saved presets:', e);
+        }
+
+        // Add cursor tracking function
+        function updateGridCursor(e) {
+            if (!window.gridSystem) return;
+            
+            const cursor = document.querySelector('.grid-cursor');
+            cursor.style.setProperty('--cursor-size', window.gridSystem.gridSpacingX + 'px');
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        }
+
+        const brightnessSlider = document.getElementById('brightness-slider');
+        const toggleGridBtn = document.getElementById('toggle-grid');
+        const body = document.body;
+        let isGridVisible = true;
+
+        function updateGridLines(brightness) {
+            const canvas = document.getElementById('grid-canvas');
+            if (!canvas || !window.gridSystem) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            if (!isGridVisible) {
+                canvas.classList.add('hidden');
+                // Wait for fade out animation to complete before clearing
+                setTimeout(() => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }, 500); // Match the transition duration
+                return;
+            }
+
+            // Remove hidden class first to trigger fade in
+            canvas.classList.remove('hidden');
+            
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate grid color based on brightness
+            const brightnessValue = brightness / 100;
+            const rgbValue = Math.round(255 * (1 - brightnessValue));
+            
+            // Adjust grid line opacity for better visibility
+            const lineOpacity = Math.max(0.3, 0.5 - (brightnessValue * 0.3)); // More visible at darker backgrounds
+            ctx.strokeStyle = `rgba(${rgbValue}, ${rgbValue}, ${rgbValue}, ${lineOpacity})`;
+            ctx.lineWidth = 1;
+
+            // Calculate total inches
+            const totalWidthInches = Math.ceil(window.gridSystem.monitorWidth * 0.393701);
+            const totalHeightInches = Math.ceil(window.gridSystem.monitorHeight * 0.393701);
+            
+            // Use inch-based grid spacing
+            const inchGridSpacingX = window.gridSystem.inchGridSpacingX || (window.gridSystem.gridSpacingX / 0.393701);
+            const inchGridSpacingY = window.gridSystem.inchGridSpacingY || (window.gridSystem.gridSpacingY / 0.393701);
+
+            // Draw vertical lines (inch-based)
+            ctx.beginPath();
+            for (let x = 0; x <= totalWidthInches; x++) {
+                const xPos = x * inchGridSpacingX;
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, canvas.height);
+            }
+
+            // Draw horizontal lines (inch-based)
+            for (let y = 0; y <= totalHeightInches; y++) {
+                const yPos = y * inchGridSpacingY;
+                ctx.moveTo(0, yPos);
+                ctx.lineTo(canvas.width, yPos);
+            }
+            ctx.stroke();
+
+            // Draw numbers with better visibility
+            ctx.font = 'bold 10px sans-serif';
+            const textOpacity = Math.max(0.7, 0.9 - (brightnessValue * 0.5)); // More visible at darker backgrounds
+            ctx.fillStyle = `rgba(${rgbValue}, ${rgbValue}, ${rgbValue}, ${textOpacity})`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // X-axis numbers (in inches) - show all numbers
+            for (let x = 1; x <= totalWidthInches; x++) {
+                const xPos = x * inchGridSpacingX;
+                // Display all inch markings
+                ctx.fillText(x.toString() + "\"", xPos, 10);
+                ctx.fillText(x.toString() + "\"", xPos, canvas.height - 10);
+            }
+
+            // Y-axis numbers (in inches) - show all numbers
+            for (let y = 1; y <= totalHeightInches; y++) {
+                const yPos = y * inchGridSpacingY;
+                // Display all inch markings
+                ctx.fillText(y.toString() + "\"", 10, yPos);
+                ctx.fillText(y.toString() + "\"", canvas.width - 10, yPos);
+            }
+        }
+        
+        // Make updateGridLines available to grid.js
+        window.updateGridLines = updateGridLines;
+
+        // Toggle grid visibility
+        toggleGridBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            isGridVisible = !isGridVisible;
+            
+            // Update toggle button appearance
+            toggleGridBtn.style.backgroundColor = isGridVisible ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+            toggleGridBtn.querySelector('img').style.opacity = isGridVisible ? '1' : '0.3';
+            
+            updateGridLines(brightnessSlider.value);
+        });
+
+        // Update background and grid contrast
+        brightnessSlider.addEventListener('input', (e) => {
+            const brightness = e.target.value;
+            const brightnessValue = brightness / 100;
+            body.style.backgroundColor = `rgba(255, 255, 255, ${brightnessValue})`;
+            
+            // We no longer update the grid when brightness changes
+            // Only background color changes now
+            console.log('Brightness changed: ' + brightness + '% - grid preserved');
+        });
+
+        // Modify the initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hide controls initially
+            const brightnessControl = document.getElementById('brightness-control');
+            brightnessControl.style.display = 'none';
+            
+            // Ensure grid is visible initially
+            isGridVisible = true;
+        });
+
+        function showControls() {
+            const brightnessControl = document.getElementById('brightness-control');
+            brightnessControl.style.display = 'block';
+            
+            // Make control panel visible
+            const controlPanel = document.getElementById('control-panel');
+            controlPanel.classList.add('visible');
+            
+            // Set initial background and grid state
+            body.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+            updateGridLines(50); // This will now draw the grid since isGridVisible is true
+        }
+        
+        // Make showControls globally available
+        window.showControls = showControls;
+
+        // Call showControls after grid is generated
+        function generateGrid() {
+            // ... existing grid generation code ...
+
+            // After grid is generated
+            showControls();
+        }
+
+        function createImageWindow(config) {
+            const container = document.getElementById('container');
+            const windowEl = document.createElement('div');
+            windowEl.className = 'figma-window image-window';
+            
+            // Convert inches to cm internally, then to pixels using grid spacing
+            const widthCm = config.width / CM_TO_INCHES; // Convert inches to cm for internal calculations
+            const heightCm = config.height / CM_TO_INCHES; // Convert inches to cm for internal calculations
+            const pxWidth = widthCm * window.gridSystem.gridSpacingX;
+            const pxHeight = heightCm * window.gridSystem.gridSpacingY;
+            windowEl.style.width = pxWidth + 'px';
+            windowEl.style.height = pxHeight + 'px';
+            
+            // Center window
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const x = (config.x !== undefined) ? config.x : (screenWidth - pxWidth) / 2;
+            const y = (config.y !== undefined) ? config.y : (screenHeight - pxHeight) / 2;
+            windowEl.style.left = x + 'px';
+            windowEl.style.top = y + 'px';
+
+            // Add drag handle
+            const dragHandle = document.createElement('div');
+            dragHandle.className = 'window-drag-handle';
+            dragHandle.innerHTML = '<img src="./assets/arrows.svg" alt="Move">';
+            windowEl.appendChild(dragHandle);
+
+            // Add close button
+            const closeButton = document.createElement('button');
+            closeButton.className = 'window-close-button';
+            closeButton.innerHTML = '<img src="./assets/close.svg" alt="Close">';
+            closeButton.onclick = () => {
+                // Revoke the object URL when closing the window
+                if (img.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(img.src);
+                }
+                windowEl.remove();
+            };
+            windowEl.appendChild(closeButton);
+
+            // Add the image
+            const img = document.createElement('img');
+            img.onload = function() {
+                // Create canvas for high-quality rendering
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas size to match image dimensions
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                
+                // Enable high-quality image smoothing
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                
+                // Draw image onto canvas
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Replace original image with canvas
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.objectFit = 'contain';
+                windowEl.appendChild(canvas);
+            };
+            
+            img.src = config.imageUrl;
+
+            // Add resize handle
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'resize-handle se';
+            windowEl.appendChild(resizeHandle);
+
+            // Add size indicator
+            const sizeIndicator = document.createElement('div');
+            sizeIndicator.className = 'size-indicator';
+            document.body.appendChild(sizeIndicator);
+
+            // Add resize functionality
+            let isResizing = false;
+            let initialMouseX = 0;
+            let initialMouseY = 0;
+            let initialWidth = 0;
+            let initialHeight = 0;
+            
+            function handleMouseMove(e) {
+                if (isResizing) {
+                    const width = initialWidth + (e.clientX - initialMouseX);
+                    const height = initialHeight + (e.clientY - initialMouseY);
+                    windowEl.style.width = `${width}px`;
+                    windowEl.style.height = `${height}px`;
+                    
+                    // Update size indicator showing inches
+                    sizeIndicator.style.display = 'block';
+                    const widthCm = (width/window.gridSystem.gridSpacingX);
+                    const heightCm = (height/window.gridSystem.gridSpacingY);
+                    const widthInches = (widthCm * CM_TO_INCHES).toFixed(1);
+                    const heightInches = (heightCm * CM_TO_INCHES).toFixed(1);
+                    sizeIndicator.textContent = `${widthInches}" × ${heightInches}"`;
+                    sizeIndicator.style.left = `${e.clientX + 20}px`;
+                    sizeIndicator.style.top = `${e.clientY + 20}px`;
+                }
+            }
+            
+            function handleMouseUp() {
+                if (isResizing) {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    sizeIndicator.style.display = 'none';
+                }
+            }
+
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                initialMouseX = e.clientX;
+                initialMouseY = e.clientY;
+                initialWidth = parseInt(windowEl.style.width);
+                initialHeight = parseInt(windowEl.style.height);
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+                e.preventDefault();
+            });
+
+            // Clean up event listeners when window is closed
+            closeButton.addEventListener('click', () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+                sizeIndicator.remove();
+                // Revoke the object URL when closing
+                if (img.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(img.src);
+                }
+                windowEl.remove();
+            });
+
+            container.appendChild(windowEl);
+
+            // Click-to-place functionality
+            let placementMode = false;
+            dragHandle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                placementMode = !placementMode;
+                dragHandle.style.background = placementMode ? 
+                    'rgba(0, 255, 0, 0.5)' : 'rgba(255, 165, 0, 0.5)';
+                
+                const cursor = document.querySelector('.grid-cursor');
+                if (placementMode) {
+                    cursor.style.display = 'block';
+                    document.addEventListener('mousemove', updateGridCursor);
+                } else {
+                    cursor.style.display = 'none';
+                    document.removeEventListener('mousemove', updateGridCursor);
+                }
+                
+                if (placementMode) {
+                    document.getElementById('container').addEventListener('click', placeWindow);
+                } else {
+                    document.getElementById('container').removeEventListener('click', placeWindow);
+                }
+            });
+
+            function placeWindow(e) {
+                const absoluteX = e.clientX;
+                const absoluteY = e.clientY;
+                
+                windowEl.style.transition = 'all 0.3s ease-in-out'; // Add smooth transition
+                windowEl.style.position = 'fixed';
+                windowEl.style.left = `${absoluteX}px`;
+                windowEl.style.top = `${absoluteY}px`;
+                
+                // Remove transition after animation completes
+                setTimeout(() => {
+                    windowEl.style.transition = '';
+                }, 300); // Match the transition duration
+                
+                placementMode = false;
+                dragHandle.style.background = 'rgba(255, 165, 0, 0.5)';
+                const cursor = document.querySelector('.grid-cursor');
+                cursor.style.display = 'none';
+                document.removeEventListener('mousemove', updateGridCursor);
+                document.getElementById('container').removeEventListener('click', placeWindow);
+            }
+        }
+
+        // Add click handler for spawn image button
+        document.getElementById('spawn-image-button').addEventListener('click', () => {
+            document.getElementById('image-input').click();
+        });
+
+        // Update the image input handler
+        document.getElementById('image-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                // Revoke any previous object URL for this file if it exists
+                const imageUrl = URL.createObjectURL(file);
+                const config = {
+                    width: document.getElementById('width-input').value,
+                    height: document.getElementById('height-input').value,
+                    imageUrl: imageUrl
+                };
+                createImageWindow(config);
+                // Reset the input so the same file can be selected again
+                e.target.value = '';
+            }
+        });
+
+        // Add this in the script section after the other event listeners
+        document.getElementById('border-toggle').addEventListener('click', () => {
+            toggleBorder();
+        });
+
+        // Add this near the top of your script section
+        // Function to handle incoming Figma frames
+        function handleFigmaFrames(frames) {
+            const container = document.getElementById('figma-frames-container');
+            container.innerHTML = ''; // Clear existing frames
+            
+            frames.forEach(frame => {
+                const frameItem = document.createElement('div');
+                frameItem.className = 'figma-frame-item';
+                frameItem.style.padding = '8px';
+                frameItem.style.marginBottom = '4px';
+                frameItem.style.background = 'rgba(50, 50, 50, 0.5)';
+                frameItem.style.borderRadius = '4px';
+                frameItem.style.display = 'flex';
+                frameItem.style.justifyContent = 'space-between';
+                frameItem.style.alignItems = 'center';
+
+                const frameInfo = document.createElement('div');
+                frameInfo.textContent = `${frame.name} (${frame.width}×${frame.height}cm)`;
+                frameInfo.style.fontSize = '12px';
+                frameInfo.style.flexGrow = '1';
+                frameItem.appendChild(frameInfo);
+
+                const launchBtn = document.createElement('button');
+                launchBtn.textContent = 'Launch';
+                launchBtn.style.padding = '4px 8px';
+                launchBtn.style.marginLeft = '8px';
+                launchBtn.style.width = 'auto';
+                launchBtn.style.fontSize = '12px';
+                launchBtn.onclick = () => {
+                    createWindow({
+                        width: frame.width,
+                        height: frame.height,
+                        url: frame.url || document.getElementById('url-input').value,
+                        x: undefined,
+                        y: undefined
+                    });
+                };
+                frameItem.appendChild(launchBtn);
+
+                container.appendChild(frameItem);
+            });
+        }
+
+        // Add message listener for Figma plugin communication
+        window.onmessage = (event) => {
+            // Verify the message is from Figma
+            if (event.data.pluginMessage && event.data.pluginMessage.type === 'figma-frames') {
+                handleFigmaFrames(event.data.pluginMessage.frames);
+            }
+        };
+
+        function toggleBorder() {
+            borderEnabled = !borderEnabled;
+            const toggleButton = document.getElementById('border-toggle');
+            toggleButton.style.background = borderEnabled ? '#437eba' : '#426e9b';
+            toggleButton.textContent = borderEnabled ? 'Border On' : 'Border Off';
+            
+            const windows = document.querySelectorAll('.figma-window');
+            windows.forEach(windowEl => {
+                if (borderEnabled) {
+                    windowEl.style.setProperty('--border-width', `${0.5 * gridSpacingX}px`);
+                    windowEl.classList.add('border-enabled');
+                } else {
+                    windowEl.classList.remove('border-enabled');
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

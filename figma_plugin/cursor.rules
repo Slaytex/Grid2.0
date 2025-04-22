@@ -1,0 +1,746 @@
+Accessing the Document
+This section provides a brief overview of how your plugin accesses the document of a Figma or FigJam file and some of the APIs you are most likely to use. Check out the reference to see the full extent of the Figma Plugin API.
+
+Figma files and nodes
+Figma and FigJam files are structured as node trees. Your plugin can traverse nodes in the tree in order to access different parts of the document.
+
+DocumentNode The DocumentNode is the root of the node tree in Figma and FigJam files. Each Figma file contains a single instance of a DocumentNode. A DocumentNode contains one or more PageNodes.
+
+PageNode PageNodes are the immediate descendants of the DocumentNode. A Figma design or FigJam file contains one or more PageNodes (one for each page in the document).
+
+PageNodes are, from the user’s perspective, the fundamental way to interact with Figma. For example, when a user opens a Figma file, the page the user lands on is represented by a PageNode, as well as the rest of the pages in the file. Each PageNode contains an array of children that represent the layers on a page. The order of the children in the array corresponds to the order of the layers in the editor.
+
+Figma files contain at least one PageNode. The node tree always contains a PageNode for every page, but only some PageNodes will have their content fully loaded. This is a feature of Figma files called dynamic page loading.
+
+Complete PageNodes are only loaded by the editor when necessary. For example:
+
+When the user navigates to a page in the editor.
+When a plugin calls a Plugin API method to load another page or contents from another page.
+Getting the current selection
+Most often, a plugin does something on the user’s current page with whatever the user has currently selected. Each page stores its selection independently. To obtain the selection of the current page, use figma.currentPage.selection, which returns a ReadonlyArray<BaseNode>.
+
+This short plugin makes the current selection half as transparent, then closes:
+
+Get current selection
+for (const node of figma.currentPage.selection) {
+  if ("opacity" in node) {
+    node.opacity *= 0.5
+  }
+}
+figma.closePlugin()
+
+If you just want to work with one of the selected layers (common when testing), you can use figma.currentPage.selection[0]. Just keep in mind, there are always three situations your plugin needs to handle:
+
+No layer is selected
+A single layer is selected
+Multiple layers are selected
+Note: In Dev Mode, users can only select one node at a time, and thus figma.currentPage.selection returns only one object in Dev Mode.
+
+Learn more in the Working in Dev Mode guide →
+
+Loading pages and nodes
+While most plugins will only need to access the current page, there may be use cases where your plugin needs to load additional pages. Because Figma loads pages in a file as needed, only the user’s current page is guaranteed to be completely loaded. Functionally, this means that you cannot expect a node on another page to be available to your plugin unless you've explicitly loaded the page that contains the node or you've asynchronously accessed the node.
+
+To find the content on a page that you want to work with, your plugin will usually iterate over PageNode.children. However, before accessing the content of a page outside the user's current page, your plugin must explicitly load that PageNode using the loadAsync() method. PageNode.children will throw an exception if called on a page that is not the current page and has not been explicitly loaded by the plugin using loadAsync().
+
+Example: Logging the number of children on all pages
+for (const page of figma.root.children) {
+  await page.loadAsync()
+  console.log(`Page ${page.name} has ${page.children.length} children`)
+}
+
+The previous example iterates over the PageNodes (page) on the DocumentNode (figma.root.children). For each page, the code calls the loadAsync() method. Then, the properties of the PageNode (for example, page.children) can be safely accessed by the plugin.
+
+Note: Loading a page doesn’t navigate a user to that page; it simply guarantees the data for that page is available to your plugin. To simultaneously load and navigate a user to a page, use await setCurrentPageAsync().
+
+Node types
+Each node has a type field which indicates its type, which is helpful if your plugin only needs to operate on certain types of nodes. For example, a spellchecking plugin is likely to only care about nodes where node.type === "TEXT".
+
+Nodes of a given type have a particular set of fields that your plugin can read and write. For example, rectangle nodes (nodes with "RECTANGLE") have a .cornerRadius field, but not a .constraints field. On the other hand, frames (nodes with type "FRAME") .constraints field, but not a .cornerRadius field.
+
+Caution: In order to build a plugin that doesn't crash, you should always think about how to handle unexpected node types. Even if your plugin only cares about certain node nodes, users may try to run your plugin with any node type. Ensure your plugin provides feedback to the user if they try to use it on a node type you don't support. You can do this using the figma.notify() function.
+
+Full document traversal
+Important: While the Plugin API makes it possible to traverse all pages of a document, Figma strongly recommends that plugins don't do so unless they're performing document-wide actions (like find-and-replace or calculating statistics across a file). Because Figma loads pages as needed, plugins that traverse all pages must first load every page. In very large and complex files, this will result in a significant delay the first time a user opens a file and runs that plugin. To avoid this delay, plugins should only load the specific pages they need.
+
+Because the Figma editor only loads pages as needed, if you want to traverse the whole document, your plugin must first call figma.loadAllPagesAsync(). This ensures that all pages in the file are correctly loaded before your plugin tries to traverse the pages.
+
+In order to search through an entire document, without any node-based filtering, you can use the node.findOne() and node.findAll() functions. Again, carefully consider if your plugin needs to do this as it requires that you load all pages using figma.loadAllPagesAsync() and could lead to performance issues for your plugin in large files.
+
+Built-in traversal helpers
+figma.loadAllPagesAsync() // ensures all PageNodes are loaded, can be slow in very large files
+
+// Finds the first text node with more than 100 characters
+const node = node.findOne(node => {
+  return node.type === "TEXT" && node.characters.length > 100
+})
+
+// Finds all empty frame nodes
+const nodes = node.findAll(node => {
+  return node.type === "FRAME" && node.children.length === 0
+})
+
+In general, if you want to have full control over how you traverse the document, you will have to write a recursive function.
+
+Custom traversal
+// This plugin counts the number of layers, ignoring instance sublayers,
+// in the document
+figma.loadAllPagesAsync() // ensures all PageNodes are loaded, can be slow in very large files
+
+let count = 0
+function traverse(node) {
+  if ("children" in node) {
+    count++
+    if (node.type !== "INSTANCE") {
+      for (const child of node.children) {
+        traverse(child)
+      }
+    }
+  }
+}
+traverse(figma.root) // start the traversal at the root
+alert(count)
+figma.closePlugin()
+
+
+
+
+Asynchronous Tasks
+This article covers asynchronous tasks in JavaScript and provides code examples. It may be helpful to understand some JavaScript fundamentals before you continue. Check out the required knowledge here →
+
+The Plugin API and Widget API include both synchronous and asynchronous functions. Usually, asynchronous functions in the Plugin API and Widget API are identified by an Async suffix, such as loadFontAsync().
+
+In this article, we’ll explain the differences between the two. We'll also explore how asynchronous functions can make your API communication more effective and why Figma favors asynchronous code for some plugin operations.
+
+Synchronous requests
+With synchronous requests, the caller must wait for a response before other requests are made. Synchronous requests are used when data is expected to return immediately. In the case of a Figma plugin, the client is usually the active tab of a web browser or the Figma desktop app.
+
+You have likely encountered these kinds of tasks in other situations, like waiting for a photo to upload before you can continue using an application. During this time you could see a progress bar, spinning circle, or loading screen.
+
+You can think of synchronous requests like getting in line at the grocery store or drive through. Each request is handled one at a time. Unlike at the grocery store, synchronous tasks can’t jump the queue. Those who were in line before you must complete their transactions before you can move forward and begin your own check out process.
+
+Typically, code written in JavaScript runs one line at a time, in the order it was written. Consider the following code:
+
+console.log("I am");
+console.log("synchronous");
+console.log("JavaScript");
+
+As JavaScript is synchronous by default, the console output looks like:
+
+“I am” is the first output in the JavaScript console.
+“synchronous” is the next output.
+“JavaScript” is the final output.
+While synchronous programming works in this example, synchronous tasks aren’t always the best approach. Since each task must wait for the previous request to receive a response before proceeding, it can slow down larger, more complex applications where response times are unpredictable.
+
+This is especially true when network requests and latency are added as considerations. Since you can’t guarantee how fast or stable a user’s internet connection is (that is, how long it will take to transfer data to and from the user) or how long it might take a server to respond to a request, the potential slowdown to synchronous code can be significant.
+
+Asynchronous requests
+Unlike synchronous requests, asynchronous requests don’t need to wait on a response before proceeding. Instead, a callback is provided to notify the client when a response is ready. Asynchronous requests are useful when an API’s response time varies based on the availability of a resource.
+
+You can think of this as ordering something from a coffee shop. You get in line, your order is taken, then you give your name so the barista can call you when your order is ready. In an API, your name is the request token or unique identifier.
+
+In a coffee shop, orders won’t always come out in the order they were placed. An americano will take less time than a frothy coffee with latte art! The same can be said of asynchronous requests.
+
+An animation showing two rectangles. One labeled “Plugin” and the other labeled “API”. In an animation labeled “Async request” requests go from the Plugin to the API and responses go from the API to the Plugin in no particular order. In an animation labeled “Sync request” requests go from the Plugin to the API and responses return in the same order that requests were received.
+
+This way, other requests can continue to process in the background and the application can keep its functionality while waiting for responses. An asynchronous approach can be an efficient solution when the API’s response time is unpredictable due to variables in data size and complexity.
+
+Learn more about asynchronous JavaScript in the MDN Web Docs →
+
+Promises
+As the client doesn’t need to wait for a response from the API, we need another way to communicate the status of that task. This is where Promises come into play.
+
+Asynchronous programming in modern JavaScript is built on the concept of Promises. A Promise is an object returned by an asynchronous request and can be in one of three states:
+
+Pending: The promise has been created but the request has not been fulfilled or rejected.
+Fulfilled: The asynchronous request was successful. When a promise is fulfilled, the .then() handler is called.
+Rejected: The asynchronous request failed. When a promise is rejected, the .catch() handler is called.
+An animation showing two rectangles. One labelled “Plugin” and the other labelled “API”. An animation labelled “Status: pending” shows a request in between the Plugin and API. An animation labelled “Status: rejected” shows the request being returned to the Plugin. An animation labelled “Status: fulfilled” shows the API sending a response to the Plugin.
+
+Consider the following code:
+
+const fetchPromise = fetch("https://httpbin.org/anything");
+
+fetchPromise.then((response) => {
+  const textPromise = response.text();
+  textPromise.then((data) => {
+    console.log(data);
+    figma.closePlugin();
+  });
+});
+
+In this example, we are using the fetch()API to request some data from the Figma API. When we fetch() from the Figma API, a Promise is returned. An asynchronous function is helpful here because we don’t know how long it will take for the API to respond with the requested data.
+
+Once the Promise state is fulfilled, the .then() handler is called. We are saying that if the response was successful, turn the response into JSON then output the data. The returned data should look something like this:
+
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    ...
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "...",
+  "url": "https://httpbin.org/anything"
+}
+
+If the Promise is rejected, an error is returned. We can view this error by adding the .catch() handler to our code:
+
+const fetchPromise = fetch("https://httpbin.org/anything");
+
+fetchPromise
+  .then((response) => {
+    const textPromise = response.text();
+    textPromise.then((data) => {
+      console.log(data);
+  })
+    .catch((error) => {
+        console.error(error);
+    });
+    figma.closePlugin();
+});
+
+Learn more about how to use Promises in the MDN Web Docs →
+
+Async and Await
+The async and await keywords allow us to use asynchronous functions that look like synchronous code. Using async and await can improve the performance of your application since it continues to run while waiting on a response. These keywords allow you to write asynchronous code in a neat, organized and readable way.
+
+Adding async at the start of function definition turns it into an asynchronous function. Inside an asynchronous function, the await keyword can be used before a function call that returns a Promise. If we rewrite our earlier example using async and await, it would look like this:
+
+async function fetchData(){
+  try {
+    const response = await fetch("https://httpbin.org/anything");
+    const text = await response.text();
+    console.log(`Response text is: ${text}`);
+  } catch (error) {
+    console.error(error);
+  }
+
+  figma.closePlugin();
+}
+
+fetchData();
+
+With async and await, we can use try...catch blocks for error handling as if we were working with synchronous code.
+
+Learn more about async and await in the MDN Web Docs →
+
+Asynchronous tasks in the Figma Plugin API
+To make asynchronous development as easy as possible with the Plugin and Widget API, Figma provides async functions in the Plugin API. Here are some examples of asynchronous tasks in Figma:
+
+loadAsync
+You’ll need to use this function to asynchronously load individual PageNodes that your plugin wants to access.
+
+The Figma editor uses dynamic page loading, which means that pages other than a user’s current page aren’t guaranteed to be loaded. This results in nodes on unloaded pages not being available to a plugin. The loadAsync function ensures that a PageNode and its dependencies are completely loaded and able to be used by your plugin.
+
+for (const page of figma.root.children) { // PageNodes are the only children of root
+  await page.loadAsync()
+  console.log(`Page ${page.name} has ${page.children.length} children`)
+}
+
+loadFontAsync
+This is the most common async function in the Plugin API. You'll need to use this function if you want your plugin to modify or re-render text nodes.
+
+Font files aren’t always available in the browser’s memory. Especially if the file lives on a user’s local machine. If someone runs your plugin in a file that doesn’t have those fonts loaded, they won’t be able to edit any text nodes. The loadFontAsync function makes sure all fonts in the file are loaded and ready to use.
+
+figma.ui.onmessage = async (pluginMessage) => {
+
+  await figma.loadFontAsync({ family: "Rubik", style: "Regular" });
+
+...
+
+exportAsync
+This function exports a selected node as an encoded image. In the example below, a polygon is created then exported as a PNG at 2x resolution. We use await to ensure that the polygon object is properly created before we attempt to export it.
+
+When settings for format and constraint aren’t specified, exportAsync defaults to exporting the node as a PNG at 1x resolution.
+
+async () => {
+  const polygon = figma.createPolygon()
+  polygon.pointCount = 6
+  polygon.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0 } }]
+
+  // Export a 2x resolution PNG of the node
+  const bytes = await polygon.exportAsync({
+    format: 'PNG',
+    constraint: { type: 'SCALE', value: 2 },
+  })
+}
+
+Here are other useful asynchronous functions in the Plugin API:
+
+saveVersionHistoryAsync: Saves a new version of the file and adds it to the version history of the file. Returns the new version id.
+createLinkPreviewAsync: (FigJam only)
+figma.clientStorage
+getPublishStatusAsync
+waitForTask: (Widget API)
+
+
+Editing Properties
+In many cases, editing a node property is as straightforward as changing a property on a regular node object. For example, this is how you could move a node 10 pixels to the right:
+
+Simple change
+node.x += 10 // easy!
+
+However, for more complex properties that are stored as arrays and objects, you will notice that we marked all the properties in those objects as readonly. That means that the following, which you may naturally be inclined to try, won't work:
+
+Readonly properties
+// error: object is not extensible
+figma.currentPage.selection.push(otherNode)
+// error: Cannot assign to read only property 'r' of object
+node.fills[0].color.r = 10
+
+In Figma design's Dev Mode, plugins can only edit certain node metadata, such as pluginData, relaunchData, and exportAsync().
+
+Learn more in the Working in Dev Mode → guide.
+
+The 'How'
+For all node properties, making a change to a property requires setting the entire property. Often, this will mean making a copy of the original property, which can then be modified.
+
+For arrays of nodes like selection where you want to make a copy of the array, but not the nodes themselves, an easy way to make a copy of the array is to use array.slice(). Other array methods that return a new array include array.concat() and array.map(). Keep in mind that most array methods such as array.push() do not create a new array, though they may be used on a copy of the array.
+
+Example:
+
+Changing selection
+// Example 1: Adding a new element to the selection via `concat`
+figma.currentPage.selection = figma.currentPage.selection.concat(someNode)
+
+// Example 2: Adding a new element to the selection via `slice`
+const selection = figma.currentPage.selection.slice()
+selection.push(someNode)
+figma.currentPage.selection = selection
+
+// Creating a new selection. This is more efficient
+// than editing `page.selection` repeatedly.
+const newSelection = []
+newSelection.push(...)
+newSelection.push(...)
+newSelection.push(...)
+newSelection.push(...)
+figma.currentPage.selection = newSelection
+
+// Remove element in selection at index i
+const selection = figma.currentPage.selection.slice()
+selection.splice(i, 1)
+figma.currentPage.selection = selection
+
+For objects such as fills/paints, you'll want to do something similar, which is to clone the object.
+
+Change fills
+// Example: Changing the red channel of the first fill
+const fills = clone(rect.fills)
+fills[0].color.r = 0.5
+rect.fills = fills
+
+For more detail on changing color properties, see the Changing Colors section below.
+
+There's many ways to implement such a clone function. A simple though inefficient one-liner would be:
+
+Simple clone function
+function clone(val) {
+  return JSON.parse(JSON.stringify(val))
+}
+
+A perhaps more principled way of cloning would look like:
+
+Better clone function
+function clone(val) {
+  const type = typeof val
+  if (val === null) {
+    return null
+  } else if (type === 'undefined' || type === 'number' ||
+             type === 'string' || type === 'boolean') {
+    return val
+  } else if (type === 'object') {
+    if (val instanceof Array) {
+      return val.map(x => clone(x))
+    } else if (val instanceof Uint8Array) {
+      return new Uint8Array(val)
+    } else {
+      let o = {}
+      for (const key in val) {
+        o[key] = clone(val[key])
+      }
+      return o
+    }
+  }
+  throw 'unknown'
+}
+
+Changing colors
+A common use case is to modify a node fill with a solid color. Color objects in the Plugin API use separate numeric properties for each color channel, but you can use figma.util.solidPaint to set both color and opacity using familiar CSS string encodings:
+
+Setting colors using figma.util.solidPaint
+if (fills[0].type === 'SOLID') {
+  const fills = clone(rect.fills)
+  fills[0] = figma.util.solidPaint("#FF00FF88", fills[0])
+  rect.fills = fills
+}
+
+For setting colors on other types of API objects, see figma.util.rgb and figma.util.rgba.
+
+The 'Why'
+Bonus material, entirely optional
+
+For your curiosity, properties work this way to defend you against easy mistakes while working around some limitations of JavaScript.
+
+This way of editing properties is not our #1 choice of API design, but...
+
+1) When writing color = node.fills[0].color, the color object has to be either a copy or a merely view into the source-of-truth that we store internally. We can't expose the internal one because:
+
+Of stability reasons
+In some cases, the internal one has a more complex structure that we simplified for the API
+Many things have to happen inside Figma when a property is changed (e.g. re-render, update instances)
+The real color isn't even a JavaScript object, but somewhere in WebAssembly memory
+Example:
+
+Erroneous edit
+// This wouldn't do anything, which is even more
+// confusing, so we throw an exception
+node.fills.[0].color.r = 0.5
+
+In the above example, setting a property on a plain JS object can't notify Figma of changes.
+
+2) We could have properties like node.fills return magic objects that can notify Figma of changes using getter, setters, or even proxies. However, that would require us to re-implement JavaScript arrays, which is not advisable. It also leads to other confusing situations:
+
+Confusing edit
+// just a plain array
+let selection = [A, B, C]
+// converts plain array into magic array?
+figma.currentPage.selection = selection
+// doesn't do anything, still a plain array
+selection.push(D)
+
+In addition, due to the need to pass plain objects when message-passing between the main thread and the UI, the magic objects would have to be converted back and forth to plain objects anyway.
+
+Debugging via console.log would also be quite painful. Since getters & setters have to be evaluated, everything would always appear as (...) in the console that you would need to click to expand. Whereas currently, console.log(node.fills) prints out the entire fills object correctly.
+
+In the end, while magic objects would be convenient in some cases, they are only convenient if they look as much like normal objects as possible. But if they did, it would be hard to tell the two apart. Since it wouldn't be possible to fully hide the abstraction, the abstraction would fail in random, hard to predict ways.
+
+
+TypeScript
+In manifest.json, the main field always takes a JavaScript file. After all, plugins run in the browser, and browsers only support JavaScript.
+
+You're free to use plain JavaScript, or any of the languages that can be translated into JavaScript. However, to build a quality plugin that won't crash in unexpected situations, we strongly recommend the use of TypeScript.
+
+What is TypeScript?
+TypeScript is not a new language. It is an extension of the JavaScript language. You can write JavaScript code, paste it into a TypeScript file. Congratulations, you've just written TypeScript!
+
+TypeScript allows you to add type annotations to your code. These don't change how your code runs, they are just notes for yourself and for the compiler
+
+Sample TypeScript
+// The ': string[]' is an annotation
+let list: string[] = []
+for (const node of figma.currentPage.selection) {
+  list.push(node.type)
+}
+
+// The ': number' are also annotations
+function doThing(x: number, str: string) {
+  // ...
+}
+
+In addition, we provide type annotations for the entire Figma API. It looks like this:
+
+plugin-typings
+interface PluginAPI {
+  readonly command: string
+  readonly root: DocumentNode
+  readonly timer?: TimerAPI
+  readonly viewport: ViewportAPI
+  closePlugin(message?: string): void
+
+  showUI(html: string, options?: ShowUIOptions): void
+  readonly ui: UIAPI
+  readonly util: UtilAPI
+
+  readonly clientStorage: ClientStorageAPI
+
+  getNodeByIdAsync(id: string): Promise<BaseNode> | null
+  getStyleByIdAsync(id: string): Promise<BaseStyle> | null
+  ...
+}
+
+Paired with an editor like Visual Studio Code, the editor is smart about knowing what variable has which properties, while you are typing!
+
+Intellisense
+
+These type annotations are more than just comments with a new syntax. The TypeScript compiler can use them to detect accidental errors.
+
+Detecting accidental errors with TypeScript
+let list: string[] = []
+for (const node of figma.currentPage.selection) {
+  // Error! Type SceneNode is not assignable to type 'string'
+  list.push(node)
+}
+
+Type error
+
+Having the compiler tell you about errors generally allows you to develop faster. It's much easier to catch and fix errors when the compiler tells you exactly what line is wrong, whereas having to test the plugin to find bugs (or worse, having your users test the plugin) is much more expensive. TypeScript doesn't prevent all bugs from happening of course, but it does eliminate a large class of them.
+
+How do I use the Figma API with TypeScript?
+One of the main reasons we want you to use TypeScript is that there are many node types in Figma, and all of them are slightly different. For example, it's easy to forget nodes like boolean operations or slices. And it's possible your plugin doesn't care about them, which is fine, but it shouldn't crash if it runs into one!
+
+Consider, for example, this function which turns a frame into a component:
+
+Erroneous way to turn frame into a component
+function turnFrameIntoComponent() {
+  const selection: SceneNode = figma.currentPage.selection[0]
+  if (!selection) { return }
+  const component = figma.createComponent()
+  component.x = selection.x
+  component.y = selection.y
+  component.resize(selection.width, selection.height)
+  // Copy children into new node
+  for (const child of selection.children) {
+    component.appendChild(child)
+  }
+  selection.remove()
+}
+
+This code could crash. The user might not necessarily have a frame selected when running the plugin! TypeScript will tell you that.
+
+Type error in a node
+
+The correct thing to do is to check the type property of a node before using it.
+
+Correct way to turn frame into a component
+function turnFrameIntoComponent() {
+  const selection: SceneNode = figma.currentPage.selection[0]
+  if (!selection) { return }
+  if (selection.type !== 'FRAME') { return } // <----
+  const component = figma.createComponent()
+  component.x = selection.x
+  component.y = selection.y
+  component.resize(selection.width, selection.height)
+  // Copy children into new node
+  for (const child of selection.children) {
+    component.appendChild(child)
+  }
+  selection.remove()
+}
+
+And the compiler is smart enough that, past that point, selection is always a FrameNode which always has a children property. It knows to narrow down SceneNode to FrameNode. Just hover over selection to see!
+
+Node type on hover
+
+TypeScript also supports type unions. In this example, NodeWithChildren is one of four node types.
+
+type NodeWithChildren = FrameNode | ComponentNode | InstanceNode | BooleanOperationNode
+
+You can combine multiple of these checks together. For example, if you often find yourself needing to check that a node has the children property, you can write a helper function for that. This function's return value is a type predicate, which tells the compiler that if supportsChildren evaluates to true, then the argument must necessarily be of type (FrameNode | ComponentNode | InstanceNode | BooleanOperationNode).
+
+Multiple type checks
+function supportsChildren(node: SceneNode):
+  node is FrameNode | ComponentNode | InstanceNode | BooleanOperationNode
+{
+  return node.type === 'FRAME' || node.type === 'GROUP' ||
+         node.type === 'COMPONENT' || node.type === 'INSTANCE' ||
+         node.type === 'BOOLEAN_OPERATION'
+}
+
+const selection = figma.currentPage.selection[0]
+if (supportsChildren(selection)) {
+  // Inside this if statement, selection always has .children property
+  console.log(selection.children)
+}
+
+Lint your TypeScript
+Linting, the automated validation of source code for issues, can be very helpful for catching errors early in the development of your plugin. Figma provides a set of typescript-eslint rules to help support plugin development. These rules can identify, and in many cases automatically fix, issues in your plugin code.
+
+To install and use the linter, follow the instructions in the Usage section of the README included with the linter rules. Find the eslint-plugin-figma-plugins repository on GitHub →
+
+Type errors are slowing you down?
+In some cases, you know your code is correct, but you can't seem to convince the compiler. One way to tell the compiler something is to use a type cast.
+
+Type casting
+// Prints the number of children. 'as NodeWithChildren'
+// tells the compiler you're sure about what you're doing
+const selection = figma.currentPage.selection[0]
+console((selection as NodeWithChildren).children)
+
+In even more extreme measures, you can use the as any cast to have TypeScript not type-check a particular variable at all. It's reasonable to do this sometimes, particularly when prototyping where you want to move as fast as possible. But try not to leave these type casts around. The compiler sometimes raises false alarms, but it finds bugs pretty often too!
+
+Accepting Parameters as Input
+This page goes over how to accept parameters as input to your plugin. Plugin parameters offer a way to receive user input without building a UI. They can be flexible, fast to develop, and convenient for users.
+
+SVG Inserter plugin accepting parameters
+
+To support parameter input, there are a few changes you have to make:
+
+Add a parameter list to your plugin’s manifest.
+Add a handler for the figma.parameters.on('input') event to provide suggested parameter values.
+Add a handler for the figma.on('run') event to run your plugin with the selected values.
+To get started building plugins with parameters, check out these samples in the Figma Plugin Samples repository.
+
+Parameter List
+To accept parameters, your plugin must define a list of parameters in the manifest. You can either define a single list of parameters on the manifest root, or you can create multiple submenu items, each with its own unique parameter list. A parameter list is an array of parameters that looks something like this:
+
+manifest.json
+{
+  "name": "Plugin with parameters",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": [
+    "figma",
+    "figjam"
+  ],
+  "documentAccess": "dynamic-page",
+  "parameters": [
+      {
+        "name": "Icon name",
+        "key": "icon-name"
+      },
+      {
+        "name": "Size",
+        "key": "size",
+        "allowFreeform": true
+      },
+      {
+        "name": "Color",
+        "key": "color",
+        "allowFreeform": true,
+        "optional": true
+      }
+  ]
+}
+
+Each parameter requires a name and a key. The name is the text that appears in the UI and the key is used to uniquely identify the value for that parameter when your plugin is run.
+
+Parameters can optionally set allowFreeform and optional flags. Freeform parameters (allowFreeform == true) allow any value to be entered, not just those suggested by the plugin. Optional parameters are skippable, meaning their values may be undefined when your plugin runs. In the UI, parameters are entered in the order they appear in the manifest, with optional parameters coming last. If optional parameters aren’t last in the manifest, we will throw an error.
+
+By default, any time that a parameter-enabled command is triggered by the user, the parameter entry UI is launched and the user is asked to provide parameter values. This includes all contexts from which a plugin can be run: quick actions, context menus, the desktop app menu, etc.
+
+However, you can make your plugin runnable without parameters by setting "parameterOnly": false in the manifest for the command. For plugins or commands with "parameterOnly": false, users will only be able to provide parameters by pressing tab in quick actions. All other menus will launch your plugin without parameters. It is the responsibility of the plugin to get the necessary information from the user, usually using showUI. This can be useful if you want to allow advanced users to quickly enter parameter values, while allowing other users to use a richer UI created by your plugin.
+
+Suggestions
+Your plugin can dynamically provide suggestions as a user types in values for parameters. To enable this, your plugin is launched in “query mode,” during which it can read from the document, and make network requests, but can’t make changes to the document or display visible UI. The Capital sample plugin demonstrates how to make network requests in a plugin that accepts parameters. For a more advanced example, refer to the Trivia sample plugin.
+
+Users enter parameters one at a time in quick actions. Every time the user makes a change, we clear out old suggestions and trigger an event in the plugin. Plugins provide updated suggestions by handling the figma.parameters.on('input') event and calling setSuggestions on the object passed in.
+
+Suggestions represent valid parameter values. For freeform parameters, any value can be entered, so these suggestions enable convenient autocompletions. But, for all other parameters, these suggestions are the only valid values accepted for that parameter. Users can’t progress to the next parameter until they select one of these valid values.
+
+Here is an example of what this looks like in practice:
+
+Filtering suggestions
+figma.parameters.on(
+  'input',
+  ({ parameters, key, query, result }: ParameterInputEvent) => {
+    switch (key) {
+      case 'icon':
+        const icons = [
+          'menu',
+          'settings',
+          'search',
+          'angle',
+          'checkbox',
+          'logout'
+        ]
+        result.setSuggestions(icons.filter(s => s.includes(query)))
+        break
+      ...
+      default:
+        return
+    }
+  }
+)
+
+You have a lot of flexibility in the suggestions you choose to present. You can filter suggestions using the simple function shown above, or you could implement a more complex ‘fuzzy’ search, among other options.
+
+The setSuggestions API also allows you to display icons and associate hidden metadata with each suggestion. With metadata, you can pass around useful information like node IDs while still displaying user friendly suggestion text.
+
+For more details, see setSuggestions and setError.
+
+Run
+After all parameters have been entered, your plugin is run via the figma.on('run') event. The selected parameter values are passed as an input to the run event handler. This event is called on all plugin runs, not just plugins with parameters, making it a convenient place to put all of your top level plugin code.
+
+Run plugin with parameters
+figma.on('run', ({ command, parameters }: RunEvent) => {
+  switch (command) {
+    case "resize":
+      handleResize(parameters.width, parameters.height)
+      break
+    case "move":
+      handleMove(parameters.dx, parameters.dy)
+      break
+    ...
+  }
+})
+
+The 'run' event also signals the end of “query mode”, which means you can start using all normal plugin APIs. It is possible that your plugin will be run with parameters, but never enter “query mode”. This can happen, for example, when using the “Run last plugin” shortcut.
+
+The 'run' event is always fired when a plugin is first launched, even when the user has not used the parameters UI. If the user did not use the parameter UI the parameters property is set to undefined rather than a map of parameter values.
+
+This is especially useful for plugins and submenu items that contain "parameterOnly": false. For such plugins, you can always use the 'run' event as an entry point to your plugin logic, and then check if parameters === undefined to check if the parameter UI was used.
+
+
+Embedding Specific Figma Frames Using the Figma API
+
+Objective
+
+This guide explains how to dynamically embed specific frames from a Figma file into discrete iframes on a website using the Figma API.
+
+Requirements
+
+Figma API Token - Generate a token from Figma Developer Settings.
+
+Figma File ID - The unique ID of your Figma file.
+
+Frame Node IDs - The specific node IDs of the frames you want to embed.
+
+Web Environment - HTML page or web app where frames will be embedded.
+
+Steps to Implement
+
+1. Get a Figma API Token
+
+Go to Figma Developer Settings
+
+Generate a Personal Access Token
+
+Store it securely for API requests
+
+2. Retrieve Frame Node IDs from the Figma File
+
+Use the following API request to get file details:
+
+GET https://api.figma.com/v1/files/{file_id}
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+Extract the node_id of the desired frame(s) from the response.
+
+3. Generate Embed URLs for the Frames
+
+Use the images endpoint to retrieve the frame’s image:
+
+GET https://api.figma.com/v1/images/{file_id}?ids={node_id}
+Authorization: Bearer YOUR_ACCESS_TOKEN
+
+Example response:
+
+{
+  "images": {
+    "1234:5678": "https://figma.com/image-link.png"
+  }
+}
+
+Use this URL in an <img> tag or <iframe>.
+
+4. Embed the Frame in an HTML Page
+
+Use the Figma Embed URL with the node-id parameter:
+
+<iframe
+  src="https://www.figma.com/embed?embed_host=figma&url=https://www.figma.com/file/YOUR-FIGMA-FILE-ID?node-id=1234%3A5678"
+  width="800"
+  height="600"
+  allowfullscreen>
+</iframe>
+
+5. Auto-Update Frames Periodically (Optional)
+
+Set up polling or WebSockets to check for updates.
+
+Refresh the iframe or image dynamically when changes occur.

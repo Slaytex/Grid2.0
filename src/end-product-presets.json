@@ -1,0 +1,47 @@
+{
+  "presets": [
+    {
+      "name": "Connect S 14.6",
+      "id": "connect_s_146",
+      "width": 11.2,
+      "height": 6.3
+    },
+    {
+      "name": "Connect S 15.6",
+      "id": "connect_s_156",
+      "width": 13.4,
+      "height": 7.6
+    },
+    {
+      "name": "Connect S 17",
+      "id": "connect_s_17", 
+      "width": 14.8,
+      "height": 8.3
+    },
+    {
+      "name": "Connect L 12.9",
+      "id": "connect_l_129",
+      "width": 11.2,
+      "height": 6.3
+    },
+    {
+      "name": "Connect W STD",
+      "id": "connect_w_std", 
+      "width": 23.0,
+      "height": 5.1
+    },
+    {
+      "name": "Connect W EXT",
+      "id": "connect_w_ext",
+      "width": 23.0,
+      "height": 8.6
+    },
+    {
+      "name": "Connect Waterfall",
+      "id": "connect_waterfall", 
+      "width": 17.9,
+      "height": 4.0
+    }
+  ]
+}
+

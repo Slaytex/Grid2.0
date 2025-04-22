@@ -1,0 +1,754 @@
+/* App by Chris Jacobs */
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+
+body.app-ready {
+    opacity: 1;
+}
+
+.h1-header {
+    font-size: 10px;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 13px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+#setup-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(30, 30, 30, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    z-index: 2000;
+    width: 200px;  /* Container width + padding */
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+
+#setup-container.hidden {
+    display: none;
+}
+
+#setup-container.fade-in {
+    opacity: 1;
+}
+
+.setup-content {
+    display: flex;
+    flex-direction: column;
+    width: 200px;  /* Fixed content width */
+}
+
+.setup-content input,
+.setup-content button,
+.setup-content div button {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+}
+
+.setup-content input {
+    padding: 8px;
+    background: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    color: white;
+    border-radius: 4px;
+}
+
+.setup-content button,
+.setup-content div button {
+    padding: 8px 16px;
+    background: #3971aa;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.setup-content button:hover,
+.setup-content div button:hover {
+    background: #3277bd;
+}
+
+.cm-input-flex {
+    display: flex;
+    width: 100%;  /* Stretches to the parent container */
+    gap: 10px;  /* Optional spacing between inputs */
+    align-items: center; /* ✅ Ensures everything (inputs + img) aligns vertically */
+    margin-bottom: 23px;
+}
+
+.cm-input-flex input {
+    flex: 1;
+    height: 50px;
+    padding: 8px;
+    font-size: 26px;
+    text-align: center;
+    border-radius: 5px;
+    border: 1px solid #5b5b5b;
+    background: #1a1a1a;
+    color: #acacac;
+}
+
+/* Removes up/down arrows in number input fields */
+.cm-input-flex input[type=number]::-webkit-outer-spin-button,
+.cm-input-flex input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.cm-input-flex input[type=number] {
+    -moz-appearance: textfield; /* Removes arrows in Firefox */
+    -webkit-appearance: textfield;
+    appearance: textfield; /* Add standard property for compatibility */
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background: #444;
+    margin: 20px 0;
+}
+
+#grid-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    opacity: 1;
+    transition: opacity 0.3s ease-in !important;
+}
+
+#grid-canvas.hidden {
+    opacity: 0 !important;
+    transition: opacity 0.3s ease-out !important;
+}
+
+#dimensions-display {
+    position: fixed;
+    top: 30px;  /* Increased from 10px */
+    right: 40px; /* Increased from 10px */
+    background: rgba(30, 30, 30, 0.8);
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+}
+
+#container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+}
+
+.figma-window, .image-window {
+    box-sizing: content-box; /* Use content-box for both windows to ensure borders appear outside */
+    position: absolute;
+    border-radius: 0px; /* Default to no border radius */
+    overflow: hidden;
+    background: black;
+    /* Set initial border width but make it transparent */
+    border-width: 0;
+    border-style: solid;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: border-width 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, border-radius 0.5s ease;
+    z-index: 100; /* Base z-index for windows */
+}
+
+/* Special styling for image windows to ensure exact sizing */
+.image-window {
+    padding: 0 !important; /* Remove any padding */
+    margin: 0 !important; /* Remove any margins */
+    display: block; /* Use block instead of flex for more predictable sizing */
+    overflow: hidden; /* Ensure nothing extends beyond the window */
+    background-color: transparent !important; /* Remove default black background */
+    line-height: 0 !important; /* Fix potential line-height issues adding extra space */
+    font-size: 0 !important; /* Eliminate any font-related spacing */
+}
+
+.image-window > img {
+    display: block !important; /* Remove default inline spacing */
+    width: 100% !important; /* Take up full width */
+    height: 100% !important; /* Take up full height */
+    margin: 0 !important; /* Remove any margins */
+    padding: 0 !important; /* Remove any padding */
+    object-fit: fill !important; /* Fill the container exactly */
+    position: relative !important; /* Ensure proper stacking context */
+    vertical-align: top !important; /* Remove bottom inline spacing */
+}
+
+.figma-window::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0 solid black;
+    border-radius: 0; /* Default to no border radius */
+    transition: transform 0.5s ease, border-radius 0.5s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.figma-window.border-enabled::before {
+    border-width: var(--border-width);
+    border-radius: var(--border-width); /* Match the border width */
+    transform: scale(1.1);
+}
+
+.figma-window.border-enabled, .image-window.border-enabled {
+    /* Default to 3/8 inch if --border-width isn't set */
+    border: var(--border-width, 0.375in) solid black !important; /* Apply border directly like in test file */
+    border-radius: var(--border-width, 0.375in) !important; /* Match border radius to width */
+    box-shadow: 0px 40px 65px 2px rgba(0, 0, 0, 0.44) !important; /* Match exact drop shadow from test */
+}
+
+#control-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(30, 30, 30, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    width: 250px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    z-index: 20;
+    opacity: 0;  /* Start hidden */
+    transition: opacity 0.5s ease-out;  /* Add fade transition */
+    visibility: hidden;  /* Hide initially */
+}
+
+#control-panel.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#control-panel-header {
+    padding: 8px;
+    margin: -15px -15px 15px -15px;
+    background: rgba(50, 50, 50, 0.5);
+    border-radius: 8px 8px 0 0;
+    cursor: move;
+    -webkit-app-region: drag;
+}
+
+.input-group {
+    margin-bottom: 10px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.input-group input {
+    width: 60px;
+    padding: 5px;
+    border: 1px solid #444;
+    background: #2c2c2c;
+    color: white;
+    border-radius: 4px;
+}
+
+button {
+    background: #426e9b;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+button:hover {
+    background: #437eba;
+}
+
+#close-all-button {
+    background: #944343;
+    margin-top: 10px;
+}
+
+#close-all-button:hover {
+    background: #ae3636;
+}
+
+.resize-handle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 50%;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.resize-handle.se {
+    bottom: 20px;
+    right: 20px;
+    cursor: se-resize;
+}
+
+.size-indicator {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 24px;
+    pointer-events: none;
+    display: none;
+    z-index: 1001;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500;
+}
+
+.grid-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 1000;
+    display: none;
+}
+
+.grid-cursor::before,
+.grid-cursor::after {
+    content: '';
+    position: absolute;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.grid-cursor::before {
+    width: 1px;
+    height: var(--cursor-size);
+    left: 50%;
+    top: calc(var(--cursor-size) / -2);
+}
+
+.grid-cursor::after {
+    height: 1px;
+    width: var(--cursor-size);
+    top: 50%;
+    left: calc(var(--cursor-size) / -2);
+}
+
+#monitor-presets {
+    display: flex;
+    flex-direction: column;
+}
+
+#brightness-control {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10cm;
+    text-align: center;
+    z-index: 1000;
+    display: none;
+}
+
+.controls-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+}
+
+.grid-toggle {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 1px 2px 5px #00000045;
+}
+
+.grid-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.grid-toggle img {
+    width: 16px;
+    height: 16px;
+    opacity: 0.8;
+}
+
+.slider {
+    width: 100%;
+    height: 5px;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+
+.slider:hover {
+    opacity: 1;
+}
+
+.grid-line {
+    mix-blend-mode: multiply;
+    background-color: rgba(128, 128, 128, 0.5) !important;
+}
+
+.image-window img, .image-window canvas {
+    image-rendering: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.footer-credit {
+    position: fixed;
+    bottom: 8%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10pt;
+    color: #888;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    white-space: nowrap;
+    margin-top: 50px;
+}
+
+.heart {
+    color: #ff3b30;
+    display: inline-block;
+    animation: pulse 1.5s ease infinite;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #1e1e1e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+    cursor: pointer;
+}
+
+#splash-screen.fade-in {
+    opacity: 1;
+}
+
+#splash-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#splash-screen img {
+    max-width: 245px; /* Changed from 490px to half size */
+    height: auto;
+    transform: scale(1.3);
+    transition: transform 0.3s ease-out;
+    border: none;
+    outline: none;
+}
+
+#splash-screen img:hover {
+    transform: scale(1.32);
+}
+
+.border-toggle-button {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+}
+
+.border-toggle-button:hover {
+    background: rgba(128, 128, 128, 0.5);
+}
+
+.figma-window:hover .border-toggle-button {
+    opacity: 1;
+}
+
+#border-toggle {
+    background: #426e9b;
+    transition: background-color 0.2s ease;
+}
+
+#border-toggle:hover {
+    background: #437eba;
+}
+
+.frame-select-container {
+    margin-bottom: 15px;
+}
+
+.dropdown-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.frame-dropdown {
+    width: 100%;
+    padding: 8px;
+    background: #1a1a1a;
+    border: 1px solid #5b5b5b;
+    border-radius: 5px;
+    color: #acacac;
+    font-size: 14px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.dropdown-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+}
+
+#launch-frame-button {
+    background: #3971aa;
+    margin-bottom: 8px;
+}
+
+#launch-frame-button:hover {
+    background: #3277bd;
+}
+
+/* Figma frame styles */
+#figma-frames-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+.figma-frame-preview {
+    background: #2a2a2a;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.frame-info {
+    flex: 1;
+}
+
+.frame-name {
+    font-size: 14px;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.frame-size {
+    font-size: 12px;
+    color: #888;
+}
+
+.frame-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.figma-frame-preview button {
+    background: #3971aa;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: auto; /* Changed from 100% to auto for side-by-side buttons */
+}
+
+.figma-frame-preview .delete-button {
+    background: #833333;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.figma-frame-preview .delete-button:hover {
+    background: #aa3333;
+}
+
+.figma-frame-preview .delete-button img {
+    filter: brightness(1.5);
+}
+
+/* ===== WINDOW CONTROLS - CONSOLIDATED VERSION ===== */
+/* Base style for window control buttons */
+.window-drag-handle,
+.window-close-button,
+.window-save-button {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: 10px !important;
+  z-index: 1000 !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  opacity: 0 !important; /* Hide by default */
+}
+
+/* Individual button styling */
+.window-drag-handle {
+  right: 90px !important;
+  background: rgba(255, 165, 0, 0.7) !important;
+  left: 10px !important; /* Left position overrides the right */
+}
+
+.window-save-button {
+  left: 50px !important;
+  background: rgba(128, 128, 128, 0.3) !important;
+}
+
+.window-close-button {
+  right: 10px !important;
+  background: rgba(220, 53, 53, 0.7) !important;
+}
+
+/* Button image styling */
+.window-drag-handle img,
+.window-save-button img,
+.window-close-button img {
+  width: 16px !important;
+  height: 16px !important;
+  filter: brightness(2) !important;
+}
+
+/* Show buttons on hover */
+.figma-window:hover .window-drag-handle,
+.figma-window:hover .window-close-button,
+.figma-window:hover .window-save-button,
+.figma-window:hover .resize-handle,
+.image-window:hover .window-drag-handle,
+.image-window:hover .window-close-button,
+.image-window:hover .resize-handle {
+  opacity: 0.8 !important;
+}
+
+/* Button hover effects */
+.window-drag-handle:hover,
+.window-close-button:hover,
+.window-save-button:hover {
+  opacity: 1 !important;
+  transform: scale(1.1) !important;
+}
+
+.window-save-button:hover {
+  background: rgba(128, 128, 128, 0.5) !important;
+}
+
+.window-close-button:hover {
+  background: rgba(255, 68, 68, 0.5) !important;
+}
+
+/* ===== END WINDOW CONTROLS ===== */
+
+/* Window controls for image windows */
+.image-window .window-drag-handle,
+.image-window .window-close-button,
+.image-window .resize-handle {
+  position: absolute !important;
+  z-index: 10000 !important; /* Ensure above the image */
+  pointer-events: auto !important;
+}
+
+/* Ensure controls appear above the image but don't affect layout */
+.image-window .window-drag-handle {
+  top: 10px !important;
+  left: 10px !important;
+}
+
+.image-window .window-close-button {
+  top: 10px !important;
+  right: 10px !important;
+}
+
+.image-window .resize-handle.se {
+  bottom: 10px !important;
+  right: 10px !important;
+}
+
+/* Hide the image window header completely */
+.image-window .window-header {
+  display: none !important;
+}
+
+/* Remove any additional padding/margin that might affect image display */
+.image-window * {
+  box-sizing: border-box !important;
+}

@@ -1,0 +1,58 @@
+{
+  "name": "grid-2.0",
+  "version": "2.0.0",
+  "description": "Grid 2.0 - The Enhanced Grid Generator",
+  "main": "src/main.js",
+  "author": "Chris Jacobs",
+  "scripts": {
+    "start": "node_modules/.bin/electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.chrisjacobs.grid2",
+    "productName": "Grid 2.0",
+    "mac": {
+      "category": "public.app-category.utilities",
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "darkModeSupport": true,
+      "hardenedRuntime": true
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      }
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "build/icon.icns"
+    ]
+  },
+  "devDependencies": {
+    "electron": "24.8.8",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "micro": "^10.0.1",
+    "tone": "^15.0.4",
+    "ws": "^8.18.0"
+  }
+}

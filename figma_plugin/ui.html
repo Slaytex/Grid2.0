@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Quicksand', sans-serif;
+    width: 350px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    background: #1E1E1E;
+    overflow: hidden; /* Prevent any scrolling on body */
+    text-transform: uppercase; /* Make all text uppercase */
+    font-weight: 600; /* Make all text heavier */
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: url("data:image/svg+xml,%3Csvg width='350' height='70' viewBox='0 0 350 70' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='350' height='70' fill='%23404040'/%3E%3Cpath d='M204.46 0L350 0V70H165L204.46 0Z' fill='%23323232'/%3E%3C/svg%3E") center center / cover no-repeat;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+  }
+
+  .grid-icon {
+    width: 116px;
+    height: 34px;
+    margin-bottom: 4px;
+  }
+
+  .connection-status, .status-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white; 
+    font-size: 9px; 
+    letter-spacing: 3px;
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .connection-status:hover {
+    opacity: 0.8;
+  }
+
+  .status-light {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4CAF50;
+    z-index: 2;
+  }
+
+  .status-light .glow {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #4CAF50;
+    filter: blur(3px);
+    animation: pulse-green 2s ease-in-out infinite;
+    z-index: 1;
+    opacity: 0.8;
+  }
+
+  @keyframes pulse-green {
+    0% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+    100% { opacity: 0.4; }
+  }
+
+  .status-light.disconnected {
+    background: #F44336;
+    animation: flash-red 0.8s linear infinite;
+  }
+
+  .status-light.disconnected .glow {
+    display: none;
+  }
+
+  @keyframes flash-red {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+  }
+
+  /* Frame List - only this should scroll vertically */
+  .frame-list {
+    flex: 1;
+    background: color(display-p3 0.118 0.118 0.118);
+    padding: 20px;
+    overflow-y: auto;  /* Allow vertical scroll */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    font-family: 'Quicksand', sans-serif;
+    color: white;
+  }
+
+  /* Custom checkbox styles */
+  .frame-item {
+    position: relative;
+    padding-left: 28px;
+    cursor: pointer;
+    font-size: 12px;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+  }
+
+  .frame-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+
+  .frame-item label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border: 1px solid color(display-p3 0.3 0.3 0.3);
+    background: color(display-p3 0.15 0.15 0.15);
+    transition: all 0.2s ease;
+  }
+
+  .frame-item input[type="checkbox"]:checked + label:before {
+    background: color(display-p3 0.823 0.795 0.503);
+    border-color: color(display-p3 0.823 0.795 0.503);
+  }
+
+  .frame-item label:after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    opacity: 0;
+    transition: all 0.2s ease;
+  }
+
+  .frame-item input[type="checkbox"]:checked + label:after {
+    opacity: 1;
+  }
+
+  .frame-item:hover label:before {
+    border-color: color(display-p3 0.823 0.795 0.503);
+  }
+
+  /* Button */
+  .button-container {
+    width: 100%;
+    background-color: color(display-p3 0.118 0.118 0.118);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+  }
+
+  .send-button {
+    border-radius: 0px;
+    border: none;
+    background: color(display-p3 0.118 0.118 0.118);
+    color: white;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: border 0.3s, letter-spacing 0.3s;
+    border: 1px solid color(display-p3 0.217 0.217 0.217);
+    width: calc(100% - 32px);
+    height: 40px;
+    font-family: 'Quicksand', sans-serif;
+  }
+
+  .send-button:hover {
+    border: 1px solid color(display-p3 0.723 0.695 0.403);
+    letter-spacing: 4px;
+  }
+
+  .send-button.sending {
+    background: color(display-p3 0.118 0.118 0.118);
+    color: #4a9fea; /* Blue text for processing states */
+    cursor: wait;
+  }
+
+  .send-button.success {
+    background: #4CAF50;
+    color: white;
+  }
+
+  .send-button.error {
+    background: #F44336;
+    color: white;
+  }
+
+  @keyframes flash-red-button {
+    0% { background-color: #F44336; }
+    50% { background-color: #641E16; }
+    100% { background-color: #F44336; }
+  }
+
+  @keyframes flash-orange-button {
+    0% { background-color: #FF9800; }
+    50% { background-color: #E65100; }
+    100% { background-color: #FF9800; }
+  }
+
+  .send-button.flash-error {
+    animation: flash-red-button 0.4s linear 2;
+  }
+
+  .send-button.flash-warning {
+    animation: flash-orange-button 0.4s linear 2;
+    background-color: #FF9800;
+  }
+
+  /* Console - only this should scroll vertically */
+  .console {
+    padding: 16px;
+    background: #1E1E1E;
+    color: #00FF00;
+    font-family: monospace;
+    font-size: 9px;
+    height: 150px;
+    overflow-y: auto;  /* Allow vertical scroll */
+    overflow-x: hidden; /* Prevent horizontal scroll */
+  }
+
+  .console-header {
+    color: white;
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    font-family: 'Quicksand', sans-serif;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgb(101, 101, 101);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .clear-console {
+    color: #666666;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    transition: color 0.2s ease;
+  }
+
+  .clear-console:hover {
+    color: #999999;
+  }
+
+  /* Custom scrollbar styling */
+  .frame-list::-webkit-scrollbar,
+  .console::-webkit-scrollbar {
+      width: 8px;  /* width of the entire scrollbar */
+  }
+
+  .frame-list::-webkit-scrollbar-track,
+  .console::-webkit-scrollbar-track {
+      background: #1E1E1E;  /* color of the tracking area */
+  }
+
+  .frame-list::-webkit-scrollbar-thumb,
+  .console::-webkit-scrollbar-thumb {
+      background: #333333;  /* color of the scroll thumb */
+      border-radius: 4px;  /* roundness of the scroll thumb */
+  }
+
+  /* Hover state */
+  .frame-list::-webkit-scrollbar-thumb:hover,
+  .console::-webkit-scrollbar-thumb:hover {
+      background: #444444;  /* color of the scroll thumb on hover */
+  }
+
+  .frame-list-header {
+    color: white;
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    font-family: 'Quicksand', sans-serif;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgb(101, 101, 101);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .refresh-icon {
+    color: #666666;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .refresh-icon:hover {
+    color: #999999;
+    transform: rotate(180deg);
+  }
+
+  /* Add these new styles */
+  .no-frames {
+    color: #888;
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+  }
+  
+  .confirmation {
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .confirmation p {
+    margin-bottom: 15px;
+    font-size: 12px;
+  }
+  
+  .confirmation-buttons {
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .confirm-button {
+    flex: 1;
+    margin: 0 5px;
+    padding: 8px;
+    background: color(display-p3 0.118 0.118 0.118);
+    color: white;
+    border: 1px solid color(display-p3 0.217 0.217 0.217);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+    font-family: 'Quicksand', sans-serif;
+  }
+  
+  .confirm-button:hover {
+    border-color: color(display-p3 0.723 0.695 0.403);
+  }
+  
+  .confirm-button.secondary {
+    background: transparent;
+  }
+  
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+  }
+  
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    border-top-color: color(display-p3 0.723 0.695 0.403);
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .grid-info {
+    margin-top: 8px;
+    background-color: #2c2c2c;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .grid-info-header {
+    background-color: #3971aa;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .grid-info-content {
+    padding: 8px;
+    font-size: 11px;
+    color: #ddd;
+    line-height: 1.5;
+  }
+
+  .loading-info {
+    color: #888;
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+  }
+
+  .connect-prompt {
+    color: #888;
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+  }
+
+  .error-info {
+    color: #F44336;
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+  }
+</style>
+
+<div class="header">
+  <div class="logo">
+    <svg width="116" height="35" viewBox="0 0 116 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M105.827 12.7375H109.507C111.227 12.7375 112.517 13.2154 113.378 14.1712C114.238 15.1164 114.668 16.5129 114.668 18.3608C114.668 22.1203 112.894 24 109.347 24H105.827V12.7375ZM109.268 22.8212C110.733 22.8212 111.774 22.4601 112.39 21.7379C113.016 21.0158 113.33 19.8901 113.33 18.3608C113.33 16.8315 113.027 15.7111 112.422 14.9995C111.816 14.2774 110.807 13.9163 109.395 13.9163H107.165V22.8212H109.268Z" fill="white"/>
+      <path d="M88.3424 22.8212H90.0628V13.9163H88.3424V12.7375H93.1214V13.9163H91.401V22.8212H93.1214V24H88.3424V22.8212Z" fill="white"/>
+      <path d="M71.9442 18.3767C72.6664 18.3767 73.2133 18.2971 73.585 18.1378C73.9673 17.9785 74.2275 17.7448 74.3656 17.4368C74.5037 17.1182 74.5727 16.6881 74.5727 16.1465C74.5727 15.6049 74.5037 15.1801 74.3656 14.8721C74.2275 14.5535 73.9673 14.3146 73.585 14.1553C73.2133 13.996 72.6664 13.9163 71.9442 13.9163H69.491V18.3767H71.9442ZM69.491 19.5555V24H68.1529V12.7375H72.008C73.4204 12.7375 74.424 13.0295 75.0187 13.6136C75.6134 14.1977 75.9108 15.042 75.9108 16.1465C75.9108 17.028 75.7515 17.7395 75.4329 18.2811C75.1143 18.8121 74.5514 19.1785 73.7443 19.3803L76.3568 24H74.8116L72.3425 19.5555H72.0239H69.491Z" fill="white"/>
+      <path d="M51.4711 19.5077V18.3448H55.82V19.5874C55.82 20.4476 55.6554 21.2229 55.3261 21.9132C55.0075 22.5928 54.5084 23.1398 53.8287 23.554C53.149 23.9575 52.2941 24.1593 51.264 24.1593C49.6816 24.1593 48.4603 23.6602 47.6001 22.6619C46.7505 21.6636 46.3257 20.2299 46.3257 18.3608C46.3257 16.5023 46.7505 15.0739 47.6001 14.0756C48.4603 13.0773 49.6816 12.5782 51.264 12.5782C52.4534 12.5782 53.4464 12.8915 54.2429 13.5181C55.05 14.134 55.5438 15.0102 55.7244 16.1465H54.3385C54.0624 14.5535 53.0375 13.757 51.264 13.757C48.8639 13.757 47.6638 15.2916 47.6638 18.3608C47.6638 19.9219 47.9665 21.0795 48.5718 21.8335C49.1772 22.5875 50.0745 22.9645 51.264 22.9645C52.5278 22.9645 53.3827 22.6247 53.8287 21.945C54.2748 21.2547 54.4925 20.4423 54.4818 19.5077H51.4711Z" fill="white"/>
+      <rect x="10.9903" y="14.5299" width="15.0938" height="15.0147" fill="#5BC4EE"/>
+      <rect x="10.9113" y="6.94355" width="15.1728" height="7.58639" fill="#91CD77"/>
+      <rect x="26.3211" y="14.688" width="7.11224" height="7.19126" fill="#EB6363"/>
+      <line x1="10.9215" y1="2.18131" x2="10.9215" y2="33.9204" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="18.501" y1="2.18131" x2="18.501" y2="33.9204" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="26.0804" y1="2.18131" x2="26.0804" y2="33.9204" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="33.6599" y1="2.18131" x2="33.6599" y2="33.9204" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="38.8708" y1="6.91849" x2="5.23687" y2="6.91849" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="38.8708" y1="14.498" x2="5.23687" y2="14.498" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="38.8708" y1="22.0774" x2="5.23687" y2="22.0774" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      <line x1="38.8708" y1="29.6569" x2="5.23687" y2="29.6569" stroke="white" stroke-width="0.473717" stroke-linecap="round"/>
+      </svg>
+      
+      
+      
+    </svg>
+  </div>
+  <div class="connection-status">
+    <span class="status-text">CONNECTED</span>
+    <div class="status-light">
+      <div class="glow"></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-info">
+
+  <div class="grid-info-content">
+    <!-- Screen info will be displayed dynamically -->
+  </div>
+</div>
+
+<div class="frame-list">
+  <div class="frame-list-header">
+    <span>FRAMES</span>
+    <span class="refresh-icon">↻</span>
+  </div>
+  <div id="frameList">
+    <!-- Frames will be inserted here -->
+  </div>
+</div>
+
+<div class="button-container">
+  <button id="sendButton" class="send-button">
+    SEND TO GRID
+  </button>
+</div>
+
+<div class="console">
+  <div class="console-header">
+    <span>CONSOLE</span>
+    <span class="clear-console">×</span>
+  </div>
+  <div id="debug"></div>
+</div>
+
+<script>
+let socket = null;
+let frameData = [];
+let scanConfirmed = false;
+let screenInfo = null; // Store screen info from Grid Generator app
+
+// Debug logging helper
+function addDebug(message) {
+  const debug = document.getElementById('debug');
+  const timestamp = new Date().toLocaleTimeString();
+  debug.innerHTML = `${timestamp} ${message}<br>${debug.innerHTML}`;
+}
+
+// WebSocket setup
+function connectWebSocket() {
+  try {
+    // Close existing socket if any
+    if (socket) {
+      socket.close();
+    }
+    
+    addDebug('Creating new WebSocket connection...');
+    socket = new WebSocket('ws://localhost:8080');
+    
+    socket.addEventListener('open', () => {
+      updateConnectionStatus(true);
+      addDebug('Connected to Electron app');
+      document.getElementById('sendButton').disabled = false;
+      
+      // Request screen info as soon as we connect
+      addDebug('Immediately requesting screen info after connection...');
+      requestScreenInfo();
+      
+      // Request again after a short delay in case the first request is sent too early
+      setTimeout(() => {
+        addDebug('Sending follow-up screen info request...');
+        requestScreenInfo();
+      }, 1000);
+    });
+
+    socket.addEventListener('message', (event) => {
+      try {
+        addDebug('Received WebSocket message: ' + event.data.substring(0, 100) + (event.data.length > 100 ? '...' : ''));
+        console.log('WebSocket message received:', event.data); // Log to browser console as well
+        
+        const message = JSON.parse(event.data);
+        addDebug('Message type: ' + message.type);
+        
+        // Handle different message types
+        if (message.type === 'screen-info') {
+          // Store screen info
+          screenInfo = message;
+          addDebug(`Received screen info: 
+Monitor: ${screenInfo.monitorWidth}cm × ${screenInfo.monitorHeight}cm
+Grid spacing: ${screenInfo.gridSpacingX?.toFixed(2) || 'undefined'}px/cm × ${screenInfo.gridSpacingY?.toFixed(2) || 'undefined'}px/cm
+DPI: ${screenInfo.dpi || 'undefined'}`);
+          
+          // Update UI with screen info
+          updateScreenInfoDisplay();
+          
+          // Forward to plugin code
+          parent.postMessage({ 
+            pluginMessage: { 
+              type: 'screen-info',
+              screenInfo
+            }
+          }, '*');
+          addDebug('Forwarded screen info to plugin code');
+        }
+      } catch (error) {
+        addDebug(`Error parsing WebSocket message: ${error.message}`);
+        console.error('Error parsing message:', error, 'Raw message:', event.data);
+      }
+    });
+
+    socket.addEventListener('error', (error) => {
+      updateConnectionStatus(false);
+      addDebug('WebSocket error: ' + error);
+      document.getElementById('sendButton').disabled = false; // Enable the button so users can still click it to see the "NOT CONNECTED" message
+      socket = null; // Set socket to null on error
+    });
+
+    socket.addEventListener('close', () => {
+      updateConnectionStatus(false);
+      addDebug('Disconnected from Electron app');
+      document.getElementById('sendButton').disabled = false; // Enable the button so users can still click it
+      socket = null; // Set socket to null on close
+    });
+
+  } catch (error) {
+    updateConnectionStatus(false);
+    addDebug('Connection error: ' + error.message);
+    document.getElementById('sendButton').disabled = false; // Enable the button so users can still click it
+    socket = null; // Make sure socket is null if connection fails
+  }
+}
+
+// Update frame list in UI
+function updateFrameList(frames) {
+  frameData = frames;
+  const frameList = document.getElementById('frameList');
+  
+  if (frames.length === 0) {
+    frameList.innerHTML = '<div class="no-frames">No frames found with the naming format name#widthxheight or name#CODE#.<br><br>Click the refresh icon to scan for frames.</div>';
+    return;
+  }
+  
+  frameList.innerHTML = frames.map(frame => `
+    <div class="frame-item">
+      <input type="checkbox" id="${frame.originalName}" value="${frame.originalName}">
+      <label for="${frame.originalName}">
+        ${frame.name} (${frame.widthInches}"x${frame.heightInches}")
+      </label>
+    </div>
+  `).join('');
+}
+
+// Show confirmation dialog
+function showConfirmation(message, count) {
+  const frameList = document.getElementById('frameList');
+  frameList.innerHTML = `
+    <div class="confirmation">
+      <p>${message}</p>
+      <div class="confirmation-buttons">
+        <button id="confirmYes" class="confirm-button">Yes, Scan All Frames</button>
+        <button id="confirmNo" class="confirm-button secondary">Cancel</button>
+      </div>
+    </div>
+  `;
+  
+  // Add event listeners
+  document.getElementById('confirmYes').addEventListener('click', () => {
+    scanConfirmed = true;
+    addDebug(`User confirmed scanning ${count} frames`);
+    parent.postMessage({ 
+      pluginMessage: { 
+        type: 'scan-frames',
+        confirmScan: true
+      }
+    }, '*');
+  });
+  
+  document.getElementById('confirmNo').addEventListener('click', () => {
+    scanConfirmed = false;
+    addDebug('User cancelled frame scanning');
+    frameList.innerHTML = '<div class="no-frames">Scanning cancelled. Click the refresh icon to try again.</div>';
+  });
+}
+
+// Show loading state
+function showLoading(message) {
+  const frameList = document.getElementById('frameList');
+  frameList.innerHTML = `<div class="loading"><div class="spinner"></div><p>${message}</p></div>`;
+}
+
+// Add click handler for send button
+document.getElementById('sendButton').addEventListener('click', () => {
+  console.log('Button clicked!'); // Debug log
+  addDebug('Button clicked!'); // Debug log in UI
+  
+  // First check if WebSocket is connected
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    // WebSocket not connected - show error in RED
+    const button = document.getElementById('sendButton');
+    button.textContent = 'NOT CONNECTED';
+    button.classList.add('error');
+    button.classList.add('flash-error');
+    
+    addDebug('WebSocket not connected. Please check your connection.');
+    
+    // Reset button after 2 seconds
+    setTimeout(() => {
+      button.textContent = 'SEND TO GRID';
+      button.classList.remove('error', 'flash-error');
+    }, 2000);
+    
+    return; // Stop execution
+  }
+  
+  // Now check if frames are selected
+  const selectedFrames = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+    .map(cb => cb.value);
+
+  console.log('Selected frames:', selectedFrames); // Debug log
+  addDebug(`Selected frames: ${selectedFrames.length}`); // Debug log in UI
+
+  if (selectedFrames.length > 0) {
+    try {
+      // Update button state
+      const button = document.getElementById('sendButton');
+      button.textContent = 'CONNECTING...';
+      button.classList.add('sending');
+      button.disabled = true;
+      
+      addDebug(`Connecting to Electron app...`);
+      
+      // WebSocket is already checked, proceed with export
+      continueWithExport();
+      
+      function continueWithExport() {
+        button.textContent = 'CREATING PNGS...';
+        addDebug(`Sending ${selectedFrames.length} frames to plugin for export...`);
+        
+        // Send to plugin for export
+        parent.postMessage({ 
+          pluginMessage: { 
+            type: 'export-frames', 
+            frameNames: selectedFrames 
+          }
+        }, '*');
+      }
+      
+    } catch (error) {
+      addDebug(`Error: ${error.message}`);
+      button.textContent = 'ERROR!';
+      button.classList.remove('sending');
+      button.classList.add('error');
+      
+      setTimeout(() => {
+        button.textContent = 'SEND TO GRID';
+        button.classList.remove('error');
+        button.disabled = false;
+      }, 2000);
+    }
+  } else {
+    // No frames selected - show ORANGE warning
+    const button = document.getElementById('sendButton');
+    
+    // Store original text and background to restore later
+    const originalText = button.textContent;
+    
+    // Set warning text 
+    button.textContent = 'SELECT A FRAME';
+    button.classList.add('flash-warning');
+    
+    // Log the error
+    addDebug('No frames selected! Please select frames to send.');
+    
+    // Reset after animation completes (about 1.6 seconds)
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.classList.remove('flash-warning');
+    }, 1600);
+  }
+});
+
+// Listen for messages from the plugin
+window.onmessage = async (event) => {
+  const message = event.data.pluginMessage;
+  
+  if (!message) return;
+  
+  if (message.type === 'init-ui') {
+    // Initial load - just show empty state
+    updateFrameList([]);
+    addDebug('Plugin loaded. Select frames in Figma and click refresh to scan them.');
+  }
+  else if (message.type === 'selection-empty') {
+    // No frames selected
+    const frameList = document.getElementById('frameList');
+    frameList.innerHTML = `<div class="no-frames">${message.message}<br><br>Please select frames in Figma first, then click the refresh icon.</div>`;
+    addDebug('No frames selected. Please select frames in Figma.');
+  }
+  else if (message.type === 'no-matching-frames') {
+    // No matching frames
+    const frameList = document.getElementById('frameList');
+    frameList.innerHTML = `<div class="no-frames">${message.message}<br><br>Make sure selected frames follow the naming format: name#widthxheight or name#CODE#</div>`;
+    addDebug('No matching frames found in selection.');
+  }
+  else if (message.type === 'confirm-scan') {
+    // Show confirmation for many frames
+    showConfirmation(message.message, message.count);
+  }
+  else if (message.type === 'scan-started') {
+    // Show loading state
+    showLoading('Scanning selected frames...');
+    addDebug('Scanning frames...');
+  }
+  else if (message.type === 'update-frame-list') {
+    // Update the frame list with new data
+    updateFrameList(message.frames);
+    addDebug(`Found ${message.frames.length} matching frames in selection`);
+  }
+  else if (message.type === 'export-started') {
+    const button = document.getElementById('sendButton');
+    button.textContent = 'Creating PNGs...';
+    addDebug(`Starting export of ${message.count} frames...`);
+  }
+  else if (message.type === 'export-progress') {
+    const button = document.getElementById('sendButton');
+    button.textContent = `Creating PNGs (${message.current}/${message.total})`;
+    button.classList.add('sending'); // Make sure the sending class is applied
+    addDebug(`Exported ${message.current} of ${message.total}: ${message.frameName}`);
+  }
+  else if (message.type === 'send-to-electron' && message.frames) {
+    const button = document.getElementById('sendButton');
+    
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      try {
+        button.textContent = 'SENDING TO GRID...';
+        button.classList.add('sending'); // Ensure sending class is applied
+        addDebug(`Exporting complete. Sending ${message.frames.length} frames to Electron app...`);
+        
+        // Send each frame's data separately to handle large files better
+        for (let i = 0; i < message.frames.length; i++) {
+          const frame = message.frames[i];
+          
+          // Include screen info dimensions if available
+          const frameData = {
+            name: frame.name,
+            widthInches: frame.widthInches,
+            heightInches: frame.heightInches,
+            originalName: frame.originalName,
+            imageBytes: Array.from(frame.imageBytes)
+          };
+          
+          // Add screen info metadata if available
+          if (screenInfo) {
+            frameData.screenInfo = {
+              monitorWidth: screenInfo.monitorWidth,
+              monitorHeight: screenInfo.monitorHeight,
+              pixelsPerCm: screenInfo.pixelsPerCm,
+              gridSpacingX: screenInfo.gridSpacingX,
+              gridSpacingY: screenInfo.gridSpacingY,
+              dpi: screenInfo.dpi
+            };
+            
+            addDebug(`Frame ${i+1}/${message.frames.length} includes screen dimensions: ${screenInfo.monitorWidth}×${screenInfo.monitorHeight}cm, grid spacing: ${screenInfo.gridSpacingX.toFixed(2)}×${screenInfo.gridSpacingY.toFixed(2)}px/cm`);
+          } else {
+            addDebug(`Warning: Frame ${i+1}/${message.frames.length} sent without screen info`);
+          }
+          
+          socket.send(JSON.stringify({
+            type: 'frame-data',
+            frame: frameData
+          }));
+          
+          addDebug(`Sent frame ${i+1}/${message.frames.length}: "${frame.name}" to Electron app`);
+        }
+        
+        // Show success state
+        button.textContent = 'SUCCESS!';
+        button.classList.remove('sending');
+        button.classList.add('success');
+        addDebug('All frames successfully sent to Electron app!');
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+          button.textContent = 'SEND TO GRID';
+          button.classList.remove('success');
+          button.disabled = false;
+        }, 2000);
+        
+      } catch (error) {
+        addDebug(`Error sending frames: ${error.message}`);
+        button.textContent = 'ERROR!';
+        button.classList.remove('sending');
+        button.classList.add('error');
+        
+        // Reset button after 2 seconds
+        setTimeout(() => {
+          button.textContent = 'SEND TO GRID';
+          button.classList.remove('error');
+          button.disabled = false;
+        }, 2000);
+      }
+    } else {
+      addDebug('WebSocket not connected - cannot send frames');
+      button.textContent = 'NOT CONNECTED';
+      button.classList.remove('sending');
+      button.classList.add('error', 'flash-error');
+      
+      // Reset button after 2 seconds
+      setTimeout(() => {
+        button.textContent = 'SEND TO GRID';
+        button.classList.remove('error', 'flash-error');
+        button.disabled = false;
+      }, 2000);
+    }
+  }
+  else if (message.type === 'get-screen-info') {
+    // Plugin is requesting screen info - if we have it, send it back
+    if (screenInfo) {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'screen-info',
+          screenInfo
+        }
+      }, '*');
+      
+      addDebug('Sent screen info to plugin');
+    } else {
+      // Don't have screen info yet, try to request it
+      requestScreenInfo();
+      addDebug('No screen info available - requested from Grid Generator');
+    }
+  }
+  else if (message.type === 'request-screen-info') {
+    // Explicit request to get fresh screen info
+    requestScreenInfo();
+    addDebug('Requested fresh screen info from Grid Generator');
+  }
+};
+
+function handleFileUrl() {
+  const url = document.getElementById('figmaUrl').value;
+  const fileKey = extractFileKey(url);
+  
+  if (fileKey) {
+    parent.postMessage({
+      pluginMessage: {
+        type: 'set-file-key',
+        fileKey: fileKey
+      }
+    }, '*');
+    showStatus('File key set: ' + fileKey);
+  } else {
+    showStatus('Invalid Figma URL', false);
+  }
+}
+
+function extractFileKey(url) {
+  const match = url.match(/figma\.com\/(file|design)\/([^\/?]+)/);
+  return match ? match[2] : null;
+}
+
+function showStatus(message, success = true) {
+  const status = document.getElementById('status');
+  status.textContent = message;
+  status.className = success ? 'success' : 'error';
+  addDebug('Status: ' + message);
+}
+
+// Start WebSocket connection
+connectWebSocket();
+
+// Initialize screen info display
+updateScreenInfoDisplay();
+
+// Update the connection status light
+function updateConnectionStatus(connected) {
+  const light = document.querySelector('.status-light');
+  const text = document.querySelector('.connection-status span');
+  if (connected) {
+    light.classList.remove('disconnected');
+    text.textContent = 'CONNECTED';
+  } else {
+    light.classList.add('disconnected');
+    text.textContent = 'DISCONNECTED';
+  }
+}
+
+// Add click handler for connection status
+document.querySelector('.connection-status').addEventListener('click', () => {
+  addDebug('Manual reconnection attempt...');
+  connectWebSocket();
+});
+
+// Add this to your existing JavaScript
+document.querySelector('.clear-console').addEventListener('click', () => {
+  document.getElementById('debug').innerHTML = '';
+  addDebug('Console cleared');
+});
+
+// Add this to your existing JavaScript
+document.querySelector('.refresh-icon').addEventListener('click', () => {
+  // Add a small rotation animation during refresh
+  const refreshIcon = document.querySelector('.refresh-icon');
+  refreshIcon.style.transform = 'rotate(360deg)';
+  
+  // Reset the confirmation flag
+  scanConfirmed = false;
+  
+  // Send message to the plugin to scan for frames
+  parent.postMessage({ pluginMessage: { type: 'scan-frames' } }, '*');
+  
+  // Reset the rotation after animation
+  setTimeout(() => {
+    refreshIcon.style.transform = 'rotate(0deg)';
+  }, 300);
+});
+
+// Request screen info from Grid Generator app
+function requestScreenInfo() {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    const message = JSON.stringify({ type: 'get-screen-info' });
+    addDebug('Requesting screen info from Grid Generator app... Sending: ' + message);
+    
+    try {
+      socket.send(message);
+    } catch (error) {
+      addDebug('Error sending screen info request: ' + error.message);
+    }
+  } else {
+    const state = socket ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][socket.readyState] : 'null';
+    addDebug(`Cannot request screen info - WebSocket not connected (state: ${state})`);
+  }
+}
+
+// Update the screen info display in UI
+function updateScreenInfoDisplay() {
+  const infoElement = document.querySelector('.grid-info-content');
+  if (!infoElement) {
+    console.error('Error: Could not find .grid-info-content element');
+    return;
+  }
+  
+  // If we haven't received screen info yet but we're connected, show "Waiting for data"
+  if (!screenInfo) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      infoElement.innerHTML = '<div class="loading-info">Waiting for data from Grid Generator...</div>';
+      console.log('No screen info available yet, showing waiting message');
+      // Try requesting again
+      requestScreenInfo();
+    } else {
+      infoElement.innerHTML = '<div class="connect-prompt">Connect to Grid Generator app to view screen information</div>';
+      console.log('Not connected to Grid Generator app');
+    }
+    return;
+  }
+  
+  console.log('Updating screen info display with data:', screenInfo);
+  
+  // We have screen info, format and display it
+  try {
+    const monitorWidth = screenInfo.monitorWidth || 34.0;
+    const monitorHeight = screenInfo.monitorHeight || 19.0;
+    const gridSpacingX = screenInfo.gridSpacingX || 38.0;
+    const gridSpacingY = screenInfo.gridSpacingY || 38.0;
+    const dpi = screenInfo.dpi || 96;
+    
+    infoElement.innerHTML = `
+      <div>Monitor: ${monitorWidth.toFixed(1)}cm × ${monitorHeight.toFixed(1)}cm</div>
+      <div>Grid spacing: ${gridSpacingX.toFixed(2)}px/cm × ${gridSpacingY.toFixed(2)}px/cm</div>
+      <div>DPI: ${dpi.toFixed(0)}</div>
+    `;
+    console.log('Screen info display updated successfully');
+  } catch (error) {
+    console.error('Error updating screen info display:', error);
+    // Show error state
+    infoElement.innerHTML = '<div class="error-info">Error displaying Grid Generator info</div>';
+  }
+}
+</script> 

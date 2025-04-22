@@ -1,0 +1,26 @@
+{
+  "name": "Fig Cast",
+  "id": "1473806787882453672",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": [
+    "figma"
+  ],
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com"
+    ],
+    "devAllowedDomains": [
+      "localhost:8080",
+      "ws://localhost:8080",
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com"
+    ],
+    "reasoning": "Required for local development to communicate with Electron app via WebSocket and to load Google Fonts"
+  }
+}
