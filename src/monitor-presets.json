@@ -2,16 +2,16 @@
     "presets": [
         {
             "name": "Mac Book Pro 16",
-            "width": 13.5,
-            "height": 8.5,
+            "width": 13.93,
+            "height": 7.84,
             "pxWidth": 3456,
             "pxHeight": 2234,
             "ppi": 254
         },
         {
             "name": "Pangyo LG Monitor 27",
-            "width": 26.38,
-            "height": 14.76,
+            "width": 23.51,
+            "height": 13.22,
             "pxWidth": 3840,
             "pxHeight": 2160,
             "ppi": null
@@ -19,31 +19,31 @@
         {
             "name": "Mountain View Frame",
             "width": 58.8,
-            "height": 31,
+            "height": 31.0,
             "pxWidth": 3840,
             "pxHeight": 2160,
             "ppi": null
         },
         {
             "name": "Apple Studio 27",
-            "width": 23.54,
-            "height": 13.23,
+            "width": 23.51,
+            "height": 13.22,
             "pxWidth": 5120,
             "pxHeight": 2880,
             "ppi": 218
         },
         {
             "name": "Samsung Serif 55",
-            "width": 47.95,
-            "height": 26.97,
+            "width": 47.91,
+            "height": 26.95,
             "pxWidth": 3840,
             "pxHeight": 2160,
             "ppi": 80
         },
         {
             "name": "Mountain View Dell 32",
-            "width": 27.44,
-            "height": 15.43,
+            "width": 27.87,
+            "height": 15.68,
             "pxWidth": 3840,
             "pxHeight": 2160,
             "ppi": 140
