@@ -145,14 +145,11 @@ async function exportFrameAsPng(node: FrameNode, frameInfo: { widthCM: number, h
     // Request screen info from UI layer (which has the WebSocket connection)
     figma.ui.postMessage({ type: 'get-screen-info' });
     
-    // First check if we have screen info stored in UI
-    // The UI will post back a message with screen-info if available
-    
-    // For now, we'll use the default export settings
-    // The UI component will pass screen info via a message
+    // For high-resolution displays (like 4K TVs), we'll use a higher scale factor
+    // 4K is approximately 3840x2160, so we'll use a scale of 2 to ensure good quality
     const settings: ExportSettingsImage = {
       format: 'PNG',
-      constraint: { type: 'SCALE', value: 1 }
+      constraint: { type: 'SCALE', value: 2 } // Increased from 1 to 2 for better quality
     };
 
     return await node.exportAsync(settings);
