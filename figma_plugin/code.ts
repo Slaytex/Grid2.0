@@ -1,18 +1,18 @@
 interface FrameData {
   name: string;          // The name part before the #
-  widthCM: number;       // From the name format (e.g., 50)
-  heightCM: number;      // From the name format (e.g., 30)
+  widthInches: number;   // From the name format (e.g., 50)
+  heightInches: number;  // From the name format (e.g., 30)
   originalName: string;  // Full original name including dimensions
   imageBytes: Uint8Array;  // Changed from imageData string to Uint8Array
 }
 
 // Add screen info interface to receive from Grid app
 interface ScreenInfo {
-  monitorWidth: number;   // Monitor width in cm
-  monitorHeight: number;  // Monitor height in cm
-  pixelsPerCm: number;    // Pixels per cm based on DPI
-  gridSpacingX: number;   // Horizontal grid spacing in pixels per cm
-  gridSpacingY: number;   // Vertical grid spacing in pixels per cm
+  monitorWidth: number;   // Monitor width in inches
+  monitorHeight: number;  // Monitor height in inches
+  pixelsPerInch: number;  // Pixels per inch (PPI)
+  gridSpacingX: number;   // Horizontal grid spacing in pixels per inch
+  gridSpacingY: number;   // Vertical grid spacing in pixels per inch
   dpi: number;            // Screen DPI
 }
 
@@ -24,19 +24,19 @@ function pixelsToCM(pixels: number): number {
   return pixels * (2.54 / 96);
 }
 
-// Size code mappings in millimeters (converted to cm)
-const SIZE_CODES: Record<string, {widthCM: number, heightCM: number}> = {
-  'SA': { widthCM: 32.333, heightCM: 18.187 },
-  'SB': { widthCM: 34.5, heightCM: 19.4 },
-  'SC': { widthCM: 37.63, heightCM: 21.17 },
-  'LI': { widthCM: 28.56, heightCM: 16.06 },
-  'WE': { widthCM: 58.406, heightCM: 21.902 },
-  'WS': { widthCM: 58.406, heightCM: 12.9 },
-  'WF': { widthCM: 45.38, heightCM: 10.047 }
+// Size code mappings in inches
+const SIZE_CODES: Record<string, {widthInches: number, heightInches: number}> = {
+  'SA': { widthInches: 12.73, heightInches: 7.16 },
+  'SB': { widthInches: 13.58, heightInches: 7.64 },
+  'SC': { widthInches: 14.81, heightInches: 8.33 },
+  'LI': { widthInches: 11.24, heightInches: 6.32 },
+  'WE': { widthInches: 22.99, heightInches: 8.62 },
+  'WS': { widthInches: 22.99, heightInches: 5.08 },
+  'WF': { widthInches: 17.87, heightInches: 3.96 }
 };
 
 // Function to parse frame names with format: name#widthxheight or name#CODE#
-function parseFrameName(fullName: string): { name: string, widthCM: number, heightCM: number } | null {
+function parseFrameName(fullName: string): { name: string, widthInches: number, heightInches: number } | null {
   // First, try to match the format name#CODE# (standard size)
   const codeMatch = fullName.match(/^(.+)#([A-Z]+)#$/);
   if (codeMatch) {
@@ -47,8 +47,8 @@ function parseFrameName(fullName: string): { name: string, widthCM: number, heig
     if (SIZE_CODES[code]) {
       return {
         name: name,
-        widthCM: SIZE_CODES[code].widthCM,
-        heightCM: SIZE_CODES[code].heightCM
+        widthInches: SIZE_CODES[code].widthInches,
+        heightInches: SIZE_CODES[code].heightInches
       };
     }
   }
@@ -56,10 +56,11 @@ function parseFrameName(fullName: string): { name: string, widthCM: number, heig
   // If not a code, try the original format: name#widthxheight
   const dimensionMatch = fullName.match(/^(.+)#(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/);
   if (dimensionMatch) {
+    // We'll assume the dimensions provided in the frame name are in inches
     return {
       name: dimensionMatch[1].trim(),
-      widthCM: parseFloat(dimensionMatch[2]),
-      heightCM: parseFloat(dimensionMatch[3])
+      widthInches: parseFloat(dimensionMatch[2]),
+      heightInches: parseFloat(dimensionMatch[3])
     };
   }
   
@@ -123,8 +124,8 @@ async function collectFrameData(): Promise<FrameData[]> {
     if (parsed) {
       frames.push({
         name: parsed.name,
-        widthCM: parsed.widthCM,
-        heightCM: parsed.heightCM,
+        widthInches: parsed.widthInches,
+        heightInches: parsed.heightInches,
         originalName: frame.name,
         imageBytes: new Uint8Array(0) // Empty array until export
       });
@@ -140,7 +141,7 @@ function requestScreenInfo() {
 }
 
 // Export frame as PNG and return bytes with proper scaling based on Grid app's dimensions
-async function exportFrameAsPng(node: FrameNode, frameInfo: { widthCM: number, heightCM: number }): Promise<Uint8Array> {
+async function exportFrameAsPng(node: FrameNode, frameInfo: { widthInches: number, heightInches: number }): Promise<Uint8Array> {
   try {
     // Request screen info from UI layer (which has the WebSocket connection)
     figma.ui.postMessage({ type: 'get-screen-info' });
@@ -154,7 +155,7 @@ async function exportFrameAsPng(node: FrameNode, frameInfo: { widthCM: number, h
 
     // We'll maintain the original specified dimensions in the frameInfo
     // The Grid app should use these dimensions rather than the actual image dimensions
-    console.log(`Exporting frame at 2x resolution. Original dimensions: ${frameInfo.widthCM}cm x ${frameInfo.heightCM}cm`);
+    console.log(`Exporting frame at 2x resolution. Original dimensions: ${frameInfo.widthInches}in x ${frameInfo.heightInches}in`);
 
     return await node.exportAsync(settings);
   } catch (error) {
@@ -238,14 +239,14 @@ figma.ui.onmessage = async (msg: {
           
           // Do the export
           const imageBytes = await exportFrameAsPng(frameNode, {
-            widthCM: parsed.widthCM,
-            heightCM: parsed.heightCM
+            widthInches: parsed.widthInches,
+            heightInches: parsed.heightInches
           });
           
           frames.push({
             name: parsed.name,
-            widthCM: parsed.widthCM,
-            heightCM: parsed.heightCM,
+            widthInches: parsed.widthInches,
+            heightInches: parsed.heightInches,
             originalName: frameNode.name,
             imageBytes // Send the raw bytes
           });

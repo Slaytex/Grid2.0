@@ -555,14 +555,14 @@ function connectWebSocket() {
           screenInfo = message;
           
           // Special case for Samsung Serif 55" - ensure correct DPI
-          if (Math.abs(screenInfo.monitorWidth - 121.8) < 1 && Math.abs(screenInfo.monitorHeight - 68.5) < 1) {
+          if (Math.abs(screenInfo.monitorWidth - 47.95) < 1 && Math.abs(screenInfo.monitorHeight - 26.97) < 1) {
             addDebug('Detected Samsung Serif 55" display - Setting correct DPI to 80');
             screenInfo.dpi = 80; // Override with correct DPI value
           }
           
           addDebug(`Received screen info: 
-Monitor: ${screenInfo.monitorWidth}cm × ${screenInfo.monitorHeight}cm
-Grid spacing: ${screenInfo.gridSpacingX?.toFixed(2) || 'undefined'}px/cm × ${screenInfo.gridSpacingY?.toFixed(2) || 'undefined'}px/cm
+Monitor: ${screenInfo.monitorWidth}" × ${screenInfo.monitorHeight}"
+Grid spacing: ${screenInfo.gridSpacingX?.toFixed(2) || 'undefined'}px/in × ${screenInfo.gridSpacingY?.toFixed(2) || 'undefined'}px/in
 DPI: ${screenInfo.dpi || 'undefined'}`);
           
           // Update UI with screen info
@@ -619,7 +619,7 @@ function updateFrameList(frames) {
     <div class="frame-item">
       <input type="checkbox" id="${frame.originalName}" value="${frame.originalName}">
       <label for="${frame.originalName}">
-        ${frame.name} (${frame.widthCM}x${frame.heightCM})
+        ${frame.name} (${frame.widthInches}"x${frame.heightInches}")
       </label>
     </div>
   `).join('');
@@ -818,16 +818,16 @@ window.onmessage = async (event) => {
           // Log the received frame data to help debug
           addDebug(`Frame data received: ${JSON.stringify({
             name: frame.name,
-            widthCM: frame.widthCM,
-            heightCM: frame.heightCM,
+            widthInches: frame.widthInches,
+            heightInches: frame.heightInches,
             originalName: frame.originalName
           })}`);
           
           // Include screen info dimensions if available
           const frameData = {
             name: frame.name,
-            widthCM: frame.widthCM,
-            heightCM: frame.heightCM,
+            widthInches: frame.widthInches,
+            heightInches: frame.heightInches,
             originalName: frame.originalName,
             imageBytes: Array.from(frame.imageBytes),
             // Add metadata to indicate image is high-res but should be displayed at original dimensions
@@ -840,13 +840,13 @@ window.onmessage = async (event) => {
             frameData.screenInfo = {
               monitorWidth: screenInfo.monitorWidth,
               monitorHeight: screenInfo.monitorHeight,
-              pixelsPerCm: screenInfo.pixelsPerCm,
+              pixelsPerInch: screenInfo.pixelsPerInch,
               gridSpacingX: screenInfo.gridSpacingX,
               gridSpacingY: screenInfo.gridSpacingY,
               dpi: screenInfo.dpi
             };
             
-            addDebug(`Frame ${i+1}/${message.frames.length} includes screen dimensions: ${screenInfo.monitorWidth}×${screenInfo.monitorHeight}cm, grid spacing: ${screenInfo.gridSpacingX.toFixed(2)}×${screenInfo.gridSpacingY.toFixed(2)}px/cm, DPI: ${screenInfo.dpi}`);
+            addDebug(`Frame ${i+1}/${message.frames.length} includes screen dimensions: ${screenInfo.monitorWidth}"×${screenInfo.monitorHeight}", grid spacing: ${screenInfo.gridSpacingX.toFixed(2)}×${screenInfo.gridSpacingY.toFixed(2)}px/in, DPI: ${screenInfo.dpi}`);
           } else {
             addDebug(`Warning: Frame ${i+1}/${message.frames.length} sent without screen info`);
           }
@@ -1055,13 +1055,13 @@ function updateScreenInfoDisplay() {
     let htmlContent = '';
     
     if (monitorWidth !== undefined && monitorHeight !== undefined) {
-      htmlContent += `<div>MONITOR: ${monitorWidth.toFixed(1)}CM × ${monitorHeight.toFixed(1)}CM</div>`;
+      htmlContent += `<div>MONITOR: ${monitorWidth.toFixed(1)}" × ${monitorHeight.toFixed(1)}"</div>`;
     } else {
       htmlContent += `<div>MONITOR: WAITING FOR DATA...</div>`;
     }
     
     if (gridSpacingX !== undefined && gridSpacingY !== undefined) {
-      htmlContent += `<div>GRID SPACING: ${gridSpacingX.toFixed(2)}PX/CM × ${gridSpacingY.toFixed(2)}PX/CM</div>`;
+      htmlContent += `<div>GRID SPACING: ${gridSpacingX.toFixed(2)}PX/IN × ${gridSpacingY.toFixed(2)}PX/IN</div>`;
     } else {
       htmlContent += `<div>GRID SPACING: WAITING FOR DATA...</div>`;
     }

@@ -15,15 +15,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 function pixelsToCM(pixels) {
     return pixels * (2.54 / 96);
 }
-// Size code mappings in millimeters (converted to cm)
+// Size code mappings in inches
 const SIZE_CODES = {
-    'SA': { widthCM: 32.333, heightCM: 18.187 },
-    'SB': { widthCM: 34.5, heightCM: 19.4 },
-    'SC': { widthCM: 37.63, heightCM: 21.17 },
-    'LI': { widthCM: 28.56, heightCM: 16.06 },
-    'WE': { widthCM: 58.406, heightCM: 21.902 },
-    'WS': { widthCM: 58.406, heightCM: 12.9 },
-    'WF': { widthCM: 45.38, heightCM: 10.047 }
+    'SA': { widthInches: 12.73, heightInches: 7.16 },
+    'SB': { widthInches: 13.58, heightInches: 7.64 },
+    'SC': { widthInches: 14.81, heightInches: 8.33 },
+    'LI': { widthInches: 11.24, heightInches: 6.32 },
+    'WE': { widthInches: 22.99, heightInches: 8.62 },
+    'WS': { widthInches: 22.99, heightInches: 5.08 },
+    'WF': { widthInches: 17.87, heightInches: 3.96 }
 };
 // Function to parse frame names with format: name#widthxheight or name#CODE#
 function parseFrameName(fullName) {
@@ -36,18 +36,19 @@ function parseFrameName(fullName) {
         if (SIZE_CODES[code]) {
             return {
                 name: name,
-                widthCM: SIZE_CODES[code].widthCM,
-                heightCM: SIZE_CODES[code].heightCM
+                widthInches: SIZE_CODES[code].widthInches,
+                heightInches: SIZE_CODES[code].heightInches
             };
         }
     }
     // If not a code, try the original format: name#widthxheight
     const dimensionMatch = fullName.match(/^(.+)#(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/);
     if (dimensionMatch) {
+        // We'll assume the dimensions provided in the frame name are in inches
         return {
             name: dimensionMatch[1].trim(),
-            widthCM: parseFloat(dimensionMatch[2]),
-            heightCM: parseFloat(dimensionMatch[3])
+            widthInches: parseFloat(dimensionMatch[2]),
+            heightInches: parseFloat(dimensionMatch[3])
         };
     }
     // If neither format matches, return null
@@ -97,8 +98,8 @@ function collectFrameData() {
             if (parsed) {
                 frames.push({
                     name: parsed.name,
-                    widthCM: parsed.widthCM,
-                    heightCM: parsed.heightCM,
+                    widthInches: parsed.widthInches,
+                    heightInches: parsed.heightInches,
                     originalName: frame.name,
                     imageBytes: new Uint8Array(0) // Empty array until export
                 });
@@ -125,7 +126,7 @@ function exportFrameAsPng(node, frameInfo) {
             };
             // We'll maintain the original specified dimensions in the frameInfo
             // The Grid app should use these dimensions rather than the actual image dimensions
-            console.log(`Exporting frame at 2x resolution. Original dimensions: ${frameInfo.widthCM}cm x ${frameInfo.heightCM}cm`);
+            console.log(`Exporting frame at 2x resolution. Original dimensions: ${frameInfo.widthInches}in x ${frameInfo.heightInches}in`);
             return yield node.exportAsync(settings);
         }
         catch (error) {
@@ -195,13 +196,13 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
                     });
                     // Do the export
                     const imageBytes = yield exportFrameAsPng(frameNode, {
-                        widthCM: parsed.widthCM,
-                        heightCM: parsed.heightCM
+                        widthInches: parsed.widthInches,
+                        heightInches: parsed.heightInches
                     });
                     frames.push({
                         name: parsed.name,
-                        widthCM: parsed.widthCM,
-                        heightCM: parsed.heightCM,
+                        widthInches: parsed.widthInches,
+                        heightInches: parsed.heightInches,
                         originalName: frameNode.name,
                         imageBytes // Send the raw bytes
                     });
