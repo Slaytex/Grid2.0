@@ -91,6 +91,9 @@
 
     <script src="grid.js"></script>
     <script>
+        // Define CM_TO_INCHES as 1 since we're now working directly with inches
+        const CM_TO_INCHES = 1;
+        
         // At the start of your script
         document.body.style.backgroundColor = '#000000';
 
@@ -109,27 +112,27 @@
                     console.log('[Renderer] Processing preset:', preset);
                     const button = document.createElement('button');
                     // Display name, dimensions in inches, and pixel dimensions if available
-                    // Convert cm to inches for display
-                    const widthInches = (preset.width * 0.393701).toFixed(1);
-                    const heightInches = (preset.height * 0.393701).toFixed(1);
+                    // Values are already in inches, no conversion needed
+                    const widthInches = preset.width.toFixed(1);
+                    const heightInches = preset.height.toFixed(1);
                     let buttonText = `${preset.name} | ${widthInches}×${heightInches}"`;
                     if (preset.pxWidth && preset.pxHeight) {
                         buttonText += ` (${preset.pxWidth}×${preset.pxHeight}px)`;
                     }
                     button.textContent = buttonText;
                     
-                    // Store ALL preset data in dataset attributes - still in cm internally
-                    button.dataset.widthCm = preset.width;
-                    button.dataset.heightCm = preset.height;
+                    // Store ALL preset data in dataset attributes - now in inches
+                    button.dataset.width = preset.width;
+                    button.dataset.height = preset.height;
                     button.dataset.pxWidth = preset.pxWidth || 'null'; // Use 'null' string for consistency
                     button.dataset.pxHeight = preset.pxHeight || 'null';
                     button.dataset.ppi = preset.ppi || 'null';
                     
                     button.onclick = () => {
                         console.log('[Renderer] Preset button clicked. Dataset:', button.dataset);
-                        // Convert cm to inches for the input fields
-                        const widthInches = (parseFloat(button.dataset.widthCm) * 0.393701).toFixed(1);
-                        const heightInches = (parseFloat(button.dataset.heightCm) * 0.393701).toFixed(1);
+                        // Values are already in inches
+                        const widthInches = parseFloat(button.dataset.width).toFixed(1);
+                        const heightInches = parseFloat(button.dataset.height).toFixed(1);
                         document.getElementById('monitor-width').value = widthInches;
                         document.getElementById('monitor-height').value = heightInches;
                         // Store the full preset data globally or pass it to initializeGrid if needed
@@ -518,13 +521,13 @@
             ctx.strokeStyle = `rgba(${rgbValue}, ${rgbValue}, ${rgbValue}, ${lineOpacity})`;
             ctx.lineWidth = 1;
 
-            // Calculate total inches
-            const totalWidthInches = Math.ceil(window.gridSystem.monitorWidth * 0.393701);
-            const totalHeightInches = Math.ceil(window.gridSystem.monitorHeight * 0.393701);
+            // Calculate total inches - no conversion needed since width/height are already in inches
+            const totalWidthInches = Math.ceil(window.gridSystem.monitorWidth);
+            const totalHeightInches = Math.ceil(window.gridSystem.monitorHeight);
             
             // Use inch-based grid spacing
-            const inchGridSpacingX = window.gridSystem.inchGridSpacingX || (window.gridSystem.gridSpacingX / 0.393701);
-            const inchGridSpacingY = window.gridSystem.inchGridSpacingY || (window.gridSystem.gridSpacingY / 0.393701);
+            const inchGridSpacingX = window.gridSystem.inchGridSpacingX || window.gridSystem.gridSpacingX;
+            const inchGridSpacingY = window.gridSystem.inchGridSpacingY || window.gridSystem.gridSpacingY;
 
             // Draw vertical lines (inch-based)
             ctx.beginPath();
