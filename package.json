@@ -5,7 +5,8 @@
   "main": "src/main.js",
   "author": "Chris Jacobs",
   "scripts": {
-    "start": "node_modules/.bin/electron .",
+    "start": "electron .",
+    "build": "electron-builder",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
