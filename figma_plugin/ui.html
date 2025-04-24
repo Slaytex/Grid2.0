@@ -553,6 +553,13 @@ function connectWebSocket() {
         if (message.type === 'screen-info') {
           // Store screen info
           screenInfo = message;
+          
+          // Special case for Samsung Serif 55" - ensure correct DPI
+          if (Math.abs(screenInfo.monitorWidth - 121.8) < 1 && Math.abs(screenInfo.monitorHeight - 68.5) < 1) {
+            addDebug('Detected Samsung Serif 55" display - Setting correct DPI to 80');
+            screenInfo.dpi = 80; // Override with correct DPI value
+          }
+          
           addDebug(`Received screen info: 
 Monitor: ${screenInfo.monitorWidth}cm × ${screenInfo.monitorHeight}cm
 Grid spacing: ${screenInfo.gridSpacingX?.toFixed(2) || 'undefined'}px/cm × ${screenInfo.gridSpacingY?.toFixed(2) || 'undefined'}px/cm
@@ -822,7 +829,10 @@ window.onmessage = async (event) => {
             widthCM: frame.widthCM,
             heightCM: frame.heightCM,
             originalName: frame.originalName,
-            imageBytes: Array.from(frame.imageBytes)
+            imageBytes: Array.from(frame.imageBytes),
+            // Add metadata to indicate image is high-res but should be displayed at original dimensions
+            isHighRes: true,
+            resolutionFactor: 2
           };
           
           // Add screen info metadata if available
@@ -836,7 +846,7 @@ window.onmessage = async (event) => {
               dpi: screenInfo.dpi
             };
             
-            addDebug(`Frame ${i+1}/${message.frames.length} includes screen dimensions: ${screenInfo.monitorWidth}×${screenInfo.monitorHeight}cm, grid spacing: ${screenInfo.gridSpacingX.toFixed(2)}×${screenInfo.gridSpacingY.toFixed(2)}px/cm`);
+            addDebug(`Frame ${i+1}/${message.frames.length} includes screen dimensions: ${screenInfo.monitorWidth}×${screenInfo.monitorHeight}cm, grid spacing: ${screenInfo.gridSpacingX.toFixed(2)}×${screenInfo.gridSpacingY.toFixed(2)}px/cm, DPI: ${screenInfo.dpi}`);
           } else {
             addDebug(`Warning: Frame ${i+1}/${message.frames.length} sent without screen info`);
           }

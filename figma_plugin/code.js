@@ -118,11 +118,14 @@ function exportFrameAsPng(node, frameInfo) {
             // Request screen info from UI layer (which has the WebSocket connection)
             figma.ui.postMessage({ type: 'get-screen-info' });
             // For high-resolution displays (like 4K TVs), we'll use a higher scale factor
-            // 4K is approximately 3840x2160, so we'll use a scale of 2 to ensure good quality
+            // For 4K TVs (like Samsung Serif 55"), we export at 2x but maintain the original dimensions
             const settings = {
                 format: 'PNG',
-                constraint: { type: 'SCALE', value: 2 } // Increased from 1 to 2 for better quality
+                constraint: { type: 'SCALE', value: 2 } // Export at 2x resolution for better quality
             };
+            // We'll maintain the original specified dimensions in the frameInfo
+            // The Grid app should use these dimensions rather than the actual image dimensions
+            console.log(`Exporting frame at 2x resolution. Original dimensions: ${frameInfo.widthCM}cm x ${frameInfo.heightCM}cm`);
             return yield node.exportAsync(settings);
         }
         catch (error) {
