@@ -8,8 +8,8 @@ let borderEnabled = false;
 let frameData = null;
 let zIndexCounter = 100; // Starting z-index for windows
 
-// Add CM to inches conversion factor
-const CM_TO_INCHES = 0.393701; // 1 cm = 0.393701 inches
+// Remove CM to inches conversion factor
+// const CM_TO_INCHES = 0.393701; // 1 cm = 0.393701 inches
 
 // Initialize window.gridSystem early
 window.gridSystem = null;
@@ -33,9 +33,9 @@ async function initializeGrid() {
     const widthInput = document.getElementById('monitor-width');
     const heightInput = document.getElementById('monitor-height');
     
-    // Store dimensions in cm internally (convert from inches if needed)
-    monitorWidth = parseFloat(widthInput.value) / CM_TO_INCHES;
-    monitorHeight = parseFloat(heightInput.value) / CM_TO_INCHES;
+    // Store dimensions in inches directly (no conversion needed)
+    monitorWidth = parseFloat(widthInput.value);
+    monitorHeight = parseFloat(heightInput.value);
 
     if (!monitorWidth || !monitorHeight) {
         alert('Please enter valid dimensions');
@@ -53,20 +53,17 @@ async function initializeGrid() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
-    // Calculate grid spacing
+    // Calculate grid spacing (pixels per inch)
     gridSpacingX = (canvas.width / monitorWidth);
     gridSpacingY = (canvas.height / monitorHeight);
 
     // Expose grid spacing globally before generating grid
     window.gridSystem = {
-        pxPerCm: dpi / 2.54,
         pxPerInch: dpi,
         gridSpacingX,
         gridSpacingY,
         monitorWidth: parseFloat(monitorWidth.toFixed(1)),
-        monitorHeight: parseFloat(monitorHeight.toFixed(1)),
-        monitorWidthInches: parseFloat((monitorWidth * CM_TO_INCHES).toFixed(1)),
-        monitorHeightInches: parseFloat((monitorHeight * CM_TO_INCHES).toFixed(1))
+        monitorHeight: parseFloat(monitorHeight.toFixed(1))
     };
     console.log('[Renderer] window.gridSystem initialized:', window.gridSystem);
 
@@ -109,9 +106,9 @@ function generateGrid() {
 
 function updateDimensionsDisplay() {
     const display = document.getElementById('dimensions-display');
-    // Display dimensions in inches, truncated to one decimal place
-    const widthInInches = (monitorWidth * CM_TO_INCHES).toFixed(1);
-    const heightInInches = (monitorHeight * CM_TO_INCHES).toFixed(1);
+    // Display dimensions in inches directly, no conversion needed
+    const widthInInches = monitorWidth.toFixed(1);
+    const heightInInches = monitorHeight.toFixed(1);
     display.textContent = `Monitor: ${widthInInches}" × ${heightInInches}"`;
 }
 
@@ -131,30 +128,26 @@ function animateGrid() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Calculate pixels per centimeter and per inch
-    const pxPerCm = dpi / 2.54;
+    // Calculate pixels per inch
     const pxPerInch = dpi;
 
-    // Calculate grid spacing based on monitor dimensions in cm
+    // Calculate grid spacing based on monitor dimensions in inches
     gridSpacingX = (canvas.width / monitorWidth);
     gridSpacingY = (canvas.height / monitorHeight);
 
-    // Calculate inch-based grid spacing
-    const inchGridSpacingX = gridSpacingX / CM_TO_INCHES;
-    const inchGridSpacingY = gridSpacingY / CM_TO_INCHES;
+    // No conversion needed since we're already using inches
+    const inchGridSpacingX = gridSpacingX;
+    const inchGridSpacingY = gridSpacingY;
     
     // Update global grid system values
     if (window.gridSystem) {
-        window.gridSystem.pxPerCm = pxPerCm;
-        window.gridSystem.pxPerInch = dpi;
+        window.gridSystem.pxPerInch = pxPerInch;
         window.gridSystem.gridSpacingX = gridSpacingX;
         window.gridSystem.gridSpacingY = gridSpacingY;
         window.gridSystem.inchGridSpacingX = inchGridSpacingX;
         window.gridSystem.inchGridSpacingY = inchGridSpacingY;
         window.gridSystem.monitorWidth = parseFloat(monitorWidth.toFixed(1));
         window.gridSystem.monitorHeight = parseFloat(monitorHeight.toFixed(1));
-        window.gridSystem.monitorWidthInches = parseFloat((monitorWidth * CM_TO_INCHES).toFixed(1));
-        window.gridSystem.monitorHeightInches = parseFloat((monitorHeight * CM_TO_INCHES).toFixed(1));
         console.log('[Renderer] window.gridSystem updated in animateGrid:', window.gridSystem);
         
         // Notify main process of grid system update
@@ -167,9 +160,9 @@ function animateGrid() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Calculate number of inch lines
-    const totalWidthInches = Math.ceil(monitorWidth * CM_TO_INCHES);
-    const totalHeightInches = Math.ceil(monitorHeight * CM_TO_INCHES);
+    // Calculate number of inch lines - already in inches, no conversion needed
+    const totalWidthInches = Math.ceil(monitorWidth);
+    const totalHeightInches = Math.ceil(monitorHeight);
     
     // Initialize line objects for animation - based on inches
     const lines = [];
@@ -360,7 +353,7 @@ fetch('end-product-presets.json')
         data.presets.forEach(preset => {
             const option = document.createElement('option');
             option.value = preset.id;
-            option.textContent = `${preset.name} (${preset.width} × ${preset.height}cm)`;
+            option.textContent = `${preset.name} (${preset.width}" × ${preset.height}")`;
             frameSelect.appendChild(option);
         });
     })
@@ -461,8 +454,8 @@ function createFigmaFrame(frame) {
     windowEl.style.zIndex = zIndexCounter++;
     
     // Set dimensions using the grid system
-    const pxWidth = frame.widthCM * window.gridSystem.gridSpacingX;
-    const pxHeight = frame.heightCM * window.gridSystem.gridSpacingY;
+    const pxWidth = frame.widthInches * window.gridSystem.gridSpacingX;
+    const pxHeight = frame.heightInches * window.gridSystem.gridSpacingY;
     windowEl.style.width = pxWidth + 'px';
     windowEl.style.height = pxHeight + 'px';
     
