@@ -1034,18 +1034,35 @@ function updateScreenInfoDisplay() {
   
   // We have screen info, format and display it
   try {
-    // Samsung Serif 55" TV has these values
-    const monitorWidth = screenInfo.monitorWidth || 121.8;
-    const monitorHeight = screenInfo.monitorHeight || 68.5;
-    const gridSpacingX = screenInfo.gridSpacingX || 31.5;
-    const gridSpacingY = screenInfo.gridSpacingY || 31.5;
-    const dpi = screenInfo.dpi || 80; // Samsung Serif 55" has 80 DPI
+    // Only use the values directly from screenInfo, no defaults
+    const monitorWidth = screenInfo.monitorWidth;
+    const monitorHeight = screenInfo.monitorHeight;
+    const gridSpacingX = screenInfo.gridSpacingX;
+    const gridSpacingY = screenInfo.gridSpacingY;
+    const dpi = screenInfo.dpi;
     
-    infoElement.innerHTML = `
-      <div>MONITOR: ${monitorWidth.toFixed(1)}CM × ${monitorHeight.toFixed(1)}CM</div>
-      <div>GRID SPACING: ${gridSpacingX.toFixed(2)}PX/CM × ${gridSpacingY.toFixed(2)}PX/CM</div>
-      <div>DPI: ${dpi.toFixed(0)}</div>
-    `;
+    // Only display values that are actually defined
+    let htmlContent = '';
+    
+    if (monitorWidth !== undefined && monitorHeight !== undefined) {
+      htmlContent += `<div>MONITOR: ${monitorWidth.toFixed(1)}CM × ${monitorHeight.toFixed(1)}CM</div>`;
+    } else {
+      htmlContent += `<div>MONITOR: WAITING FOR DATA...</div>`;
+    }
+    
+    if (gridSpacingX !== undefined && gridSpacingY !== undefined) {
+      htmlContent += `<div>GRID SPACING: ${gridSpacingX.toFixed(2)}PX/CM × ${gridSpacingY.toFixed(2)}PX/CM</div>`;
+    } else {
+      htmlContent += `<div>GRID SPACING: WAITING FOR DATA...</div>`;
+    }
+    
+    if (dpi !== undefined) {
+      htmlContent += `<div>DPI: ${dpi.toFixed(0)}</div>`;
+    } else {
+      htmlContent += `<div>DPI: WAITING FOR DATA...</div>`;
+    }
+    
+    infoElement.innerHTML = htmlContent;
     console.log('Screen info display updated successfully');
   } catch (error) {
     console.error('Error updating screen info display:', error);
