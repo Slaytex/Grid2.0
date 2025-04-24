@@ -2,24 +2,24 @@
     "presets": [
         {
             "name": "Mac Book Pro 16",
-            "width": 13.93,
-            "height": 7.84,
+            "width": 13.7,
+            "height":8.6,
             "pxWidth": 3456,
             "pxHeight": 2234,
             "ppi": 254
         },
         {
             "name": "Pangyo LG Monitor 27",
-            "width": 23.51,
-            "height": 13.22,
+            "width": 23.5,
+            "height": 13.2,
             "pxWidth": 3840,
             "pxHeight": 2160,
-            "ppi": null
+            "ppi": 163
         },
         {
             "name": "Apple Studio 27",
-            "width": 23.51,
-            "height": 13.22,
+            "width": 23.5,
+            "height": 13.2,
             "pxWidth": 5120,
             "pxHeight": 2880,
             "ppi": 218
@@ -30,7 +30,7 @@
             "height": 26.95,
             "pxWidth": 3840,
             "pxHeight": 2160,
-            "ppi": 80
+            "ppi": 81
         },
         {
             "name": "Mountain View Dell 32",
