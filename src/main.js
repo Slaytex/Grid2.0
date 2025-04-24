@@ -51,12 +51,11 @@ async function broadcastScreenInfo() {
     // We already have the gridSystem from the cache
     const screenInfo = {
       type: 'screen-info',
-      monitorWidth: gridSystem.monitorWidth, // width in cm
-      monitorHeight: gridSystem.monitorHeight, // height in cm
-      pixelsPerCm: gridSystem.pxPerCm,
-      gridSpacingX: gridSystem.gridSpacingX, // pixels per cm in grid
+      monitorWidth: gridSystem.monitorWidth, // width in inches
+      monitorHeight: gridSystem.monitorHeight, // height in inches
+      gridSpacingX: gridSystem.gridSpacingX, // pixels per inch in grid
       gridSpacingY: gridSystem.gridSpacingY,
-      dpi: gridSystem.pxPerCm * 2.54 // convert back to DPI
+      dpi: gridSystem.pxPerInch || (gridSystem.gridSpacingX + gridSystem.gridSpacingY) / 2 // Use pxPerInch or calculate from grid spacing
     };
     
     const screenInfoJSON = JSON.stringify(screenInfo);
