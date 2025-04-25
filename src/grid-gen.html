@@ -11,16 +11,16 @@
     </div>
     <div id="setup-container">
         <div class="setup-content">
-            <div class="h1-header">Monitor Setup</div>
-            <div class="cm-input-flex">
-            <input type="number" id="monitor-width" placeholder="W (in)">
-            <input type="number" id="monitor-height" placeholder="H (in)">
+            <div class="h1-header">Select Monitor Size</div>
+            <div class="input-flex">
+            <input type="number" id="monitor-width" placeholder="W">
+            <input type="number" id="monitor-height" placeholder="H">
             </div>
            <button onclick="initializeGrid()">
                <img src="assets/grid-go_white.svg" alt="Grid Icon" style="width: 20px; height: 20px; vertical-align: middle;"></button>
             
             <div class="divider"></div>
-            <div class="h1-header">Monitor Presets</div>
+            <div class="h1-header">Presets</div>
             <div id="monitor-presets"></div>
         </div>
        
@@ -51,7 +51,7 @@
             <label>URL</label>
             <input type="text" id="url-input" value="https://www.figma.com/mirror" style="width: 100%;">
         </div>
-        <div class="cm-input-flex">
+        <div class="input-flex">
             <input type="number" id="width-input" value="10" min="1" max="66" placeholder="W (in)">
             <img src="assets/close.svg" alt="X" style="width: 20px; height: 20px; vertical-align: middle;">
             <input type="number" id="height-input" value="10" min="1" max="37" placeholder="H (in)">
@@ -91,10 +91,6 @@
 
     <script src="grid.js"></script>
     <script>
-        // Define CM_TO_INCHES as 1 since we're now working directly with inches
-        const CM_TO_INCHES = 1;
-        
-        // At the start of your script
         document.body.style.backgroundColor = '#000000';
 
         // Load monitor presets
@@ -212,11 +208,9 @@
             sizeIndicator.className = 'size-indicator';
             document.body.appendChild(sizeIndicator);
 
-            // Convert inches to cm internally, then to pixels using grid spacing
-            const widthCm = config.width / CM_TO_INCHES; // Convert inches to cm for internal calculations
-            const heightCm = config.height / CM_TO_INCHES; // Convert inches to cm for internal calculations
-            const pxWidth = widthCm * window.gridSystem.gridSpacingX;
-            const pxHeight = heightCm * window.gridSystem.gridSpacingY;
+            // Convert directly to pixels using grid spacing
+            const pxWidth = config.width * window.gridSystem.gridSpacingX;
+            const pxHeight = config.height * window.gridSystem.gridSpacingY;
             windowEl.style.width = pxWidth + 'px';
             windowEl.style.height = pxHeight + 'px';
             
@@ -252,11 +246,9 @@
                 const rawWidth = windowEl.style.width.replace('px', '');
                 const rawHeight = windowEl.style.height.replace('px', '');
                 
-                // Convert to cm then to inches with one decimal place
-                const widthCm = parseFloat((parseInt(rawWidth) / window.gridSystem.gridSpacingX).toFixed(1));
-                const heightCm = parseFloat((parseInt(rawHeight) / window.gridSystem.gridSpacingY).toFixed(1));
-                const widthInches = (widthCm * CM_TO_INCHES).toFixed(1);
-                const heightInches = (heightCm * CM_TO_INCHES).toFixed(1);
+                // Convert directly to inches
+                const widthInches = parseFloat((parseInt(rawWidth) / window.gridSystem.gridSpacingX).toFixed(1));
+                const heightInches = parseFloat((parseInt(rawHeight) / window.gridSystem.gridSpacingY).toFixed(1));
                 
                 const config = {
                     url: document.getElementById('url-input').value,
@@ -338,10 +330,8 @@
                     
                     // Update size indicator showing inches directly
                     sizeIndicator.style.display = 'block';
-                    const widthCm = (width/window.gridSystem.gridSpacingX);
-                    const heightCm = (height/window.gridSystem.gridSpacingY);
-                    const widthInches = (widthCm * CM_TO_INCHES).toFixed(1);
-                    const heightInches = (heightCm * CM_TO_INCHES).toFixed(1);
+                    const widthInches = (width/window.gridSystem.gridSpacingX).toFixed(1);
+                    const heightInches = (height/window.gridSystem.gridSpacingY).toFixed(1);
                     sizeIndicator.textContent = `${widthInches}" × ${heightInches}"`;
                     sizeIndicator.style.left = `${e.clientX + 20}px`;
                     sizeIndicator.style.top = `${e.clientY + 20}px`;
@@ -634,11 +624,9 @@
             const windowEl = document.createElement('div');
             windowEl.className = 'figma-window image-window';
             
-            // Convert inches to cm internally, then to pixels using grid spacing
-            const widthCm = config.width / CM_TO_INCHES; // Convert inches to cm for internal calculations
-            const heightCm = config.height / CM_TO_INCHES; // Convert inches to cm for internal calculations
-            const pxWidth = widthCm * window.gridSystem.gridSpacingX;
-            const pxHeight = heightCm * window.gridSystem.gridSpacingY;
+            // Convert directly to pixels using grid spacing
+            const pxWidth = config.width * window.gridSystem.gridSpacingX;
+            const pxHeight = config.height * window.gridSystem.gridSpacingY;
             windowEl.style.width = pxWidth + 'px';
             windowEl.style.height = pxHeight + 'px';
             
@@ -722,10 +710,8 @@
                     
                     // Update size indicator showing inches
                     sizeIndicator.style.display = 'block';
-                    const widthCm = (width/window.gridSystem.gridSpacingX);
-                    const heightCm = (height/window.gridSystem.gridSpacingY);
-                    const widthInches = (widthCm * CM_TO_INCHES).toFixed(1);
-                    const heightInches = (heightCm * CM_TO_INCHES).toFixed(1);
+                    const widthInches = (width/window.gridSystem.gridSpacingX).toFixed(1);
+                    const heightInches = (height/window.gridSystem.gridSpacingY).toFixed(1);
                     sizeIndicator.textContent = `${widthInches}" × ${heightInches}"`;
                     sizeIndicator.style.left = `${e.clientX + 20}px`;
                     sizeIndicator.style.top = `${e.clientY + 20}px`;
@@ -858,7 +844,7 @@
                 frameItem.style.alignItems = 'center';
 
                 const frameInfo = document.createElement('div');
-                frameInfo.textContent = `${frame.name} (${frame.width}×${frame.height}cm)`;
+                frameInfo.textContent = `${frame.name} (${frame.width}×${frame.height}")`;
                 frameInfo.style.fontSize = '12px';
                 frameInfo.style.flexGrow = '1';
                 frameItem.appendChild(frameInfo);

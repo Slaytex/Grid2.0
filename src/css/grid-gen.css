@@ -85,37 +85,30 @@ body.app-ready {
     background: #3277bd;
 }
 
-.cm-input-flex {
+.input-flex {
     display: flex;
-    width: 100%;  /* Stretches to the parent container */
-    gap: 10px;  /* Optional spacing between inputs */
-    align-items: center; /* ✅ Ensures everything (inputs + img) aligns vertically */
-    margin-bottom: 23px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-.cm-input-flex input {
+.input-flex input {
     flex: 1;
-    height: 50px;
+    width: 100%;
     padding: 8px;
-    font-size: 26px;
-    text-align: center;
-    border-radius: 5px;
-    border: 1px solid #5b5b5b;
-    background: #1a1a1a;
-    color: #acacac;
+    border: 1px solid #3b3b3b;
+    border-radius: 4px;
+    background: #1e1e1e;
+    color: #fff;
 }
 
-/* Removes up/down arrows in number input fields */
-.cm-input-flex input[type=number]::-webkit-outer-spin-button,
-.cm-input-flex input[type=number]::-webkit-inner-spin-button {
+.input-flex input[type=number]::-webkit-outer-spin-button,
+.input-flex input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-.cm-input-flex input[type=number] {
-    -moz-appearance: textfield; /* Removes arrows in Firefox */
-    -webkit-appearance: textfield;
-    appearance: textfield; /* Add standard property for compatibility */
+.input-flex input[type=number] {
+    -moz-appearance: textfield;
 }
 
 .divider {
@@ -594,10 +587,14 @@ button:hover {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
+    flex-direction: column;
 }
 
 .frame-info {
     flex: 1;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
 }
 
 .frame-name {
