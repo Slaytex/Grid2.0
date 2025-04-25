@@ -316,15 +316,29 @@
   }
 
   .refresh-icon {
-    color: #666666;
+    color: #e0e0e0;
     cursor: pointer;
-    font-size: 14px;
-    padding: 0 4px;
-    transition: transform 0.2s ease, color 0.2s ease;
+    padding: 4px;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+  }
+
+  .refresh-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .refresh-icon svg path {
+    fill: #77c2ea;
+    transition: fill 0.2s ease;
+  }
+
+  .refresh-icon:hover svg path {
+    fill: #ffffff;
   }
 
   .refresh-icon:hover {
-    color: #999999;
     transform: rotate(180deg);
   }
 
@@ -395,7 +409,6 @@
   }
 
   .grid-info {
-    margin-top: 8px;
     background-color: #2c2c2c;
     border-radius: 4px;
     overflow: hidden;
@@ -410,7 +423,6 @@
   }
 
   .grid-info-content {
-    padding: 8px;
     font-size: 11px;
     color: #ddd;
     line-height: 1.5;
@@ -435,6 +447,24 @@
     text-align: center;
     padding: 20px;
     font-size: 12px;
+  }
+
+  .help-link {
+    display: block;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    font-size: 9px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 1px;
+    padding: 5px 0;
+  }
+
+  .help-link:hover {
+    background: #91cd77;
+    letter-spacing: 1.5px;
+    color: #2e4226;
   }
 </style>
 
@@ -470,17 +500,24 @@
   </div>
 </div>
 
-<div class="grid-info">
+<a href="https://css-playground-f31b22.webflow.io/" target="_blank" class="help-link">Instructions here →</a>
 
+
+<div class="grid-info">
   <div class="grid-info-content">
     <!-- Screen info will be displayed dynamically -->
   </div>
 </div>
 
+
 <div class="frame-list">
   <div class="frame-list-header">
     <span>FRAMES</span>
-    <span class="refresh-icon">↻</span>
+    <span class="refresh-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.6498 6.35C16.9096 5.60494 16.0293 5.01371 15.0596 4.61039C14.0899 4.20706 13.05 3.99962 11.9998 4C7.57977 4 4.00977 7.58 4.00977 12C4.00977 16.42 7.57977 20 11.9998 20C15.7298 20 18.8398 17.45 19.7298 14H17.6498C17.2378 15.1695 16.4731 16.1824 15.4611 16.8988C14.4491 17.6153 13.2397 18 11.9998 18C8.68977 18 5.99977 15.31 5.99977 12C5.99977 8.69 8.68977 6 11.9998 6C13.6598 6 15.1398 6.69 16.2198 7.78L12.9998 11H19.9998V4L17.6498 6.35Z"/>
+      </svg>
+    </span>
   </div>
   <div id="frameList">
     <!-- Frames will be inserted here -->
@@ -611,7 +648,7 @@ function updateFrameList(frames) {
   const frameList = document.getElementById('frameList');
   
   if (frames.length === 0) {
-    frameList.innerHTML = '<div class="no-frames">No frames found with the naming format name#widthxheight or name#CODE#.<br><br>Click the refresh icon to scan for frames.</div>';
+    frameList.innerHTML = '<div class="no-frames">No frames found with the naming format name#widthxheight or name#CODE#.<br><br>Select frames then <span style="color: #77c2ea">Refresh</span>.</div>';
     return;
   }
   
@@ -768,7 +805,7 @@ window.onmessage = async (event) => {
   else if (message.type === 'selection-empty') {
     // No frames selected
     const frameList = document.getElementById('frameList');
-    frameList.innerHTML = `<div class="no-frames">${message.message}<br><br>Please select frames in Figma first, then click the refresh icon.</div>`;
+    frameList.innerHTML = `<div class="no-frames">${message.message}</div>`;
     addDebug('No frames selected. Please select frames in Figma.');
   }
   else if (message.type === 'no-matching-frames') {
@@ -1034,7 +1071,7 @@ function updateScreenInfoDisplay() {
       // Try requesting again
       requestScreenInfo();
     } else {
-      infoElement.innerHTML = '<div class="connect-prompt">Connect to Grid Generator app to view screen information</div>';
+      infoElement.innerHTML = '<div class="connect-prompt">Connect to Grid App</div>';
       console.log('Not connected to Grid Generator app');
     }
     return;

@@ -178,14 +178,19 @@ figma.ui.onmessage = async (msg: {
   type: string, 
   frameNames?: string[], 
   confirmScan?: boolean,
-  screenInfo?: ScreenInfo  // Add type for screen info messages
+  screenInfo?: ScreenInfo,  // Add type for screen info messages
+  url?: string
 }) => {
+  if (msg.type === 'open-url' && msg.url) {
+    figma.openExternal(msg.url);
+    return;
+  }
   if (msg.type === 'scan-frames') {
     // Check if any frames are selected
     if (figma.currentPage.selection.length === 0) {
       figma.ui.postMessage({ 
         type: 'selection-empty', 
-        message: 'Please select frames to scan.'
+        message: 'Select frames then <span style="color: #77c2ea">Refresh</span>.'
       });
       return;
     }
