@@ -177,4 +177,30 @@ Common issues and solutions:
 ## Contributing
 
 [Your Contributing Guidelines] 
-[Your Contributing Guidelines] 
+
+## Frame Naming Conventions
+
+When creating frames in Figma, you can use two naming formats to specify the frame size:
+
+1. **Custom Size Format**: `name#width×height`
+   - Example: `MyFrame#10×5` creates a frame named "MyFrame" with width=10 inches and height=5 inches
+   - Use the × symbol (multiplication sign) between width and height
+   - Measurements are in inches
+
+2. **Preset Size Format**: `name#code#`
+   - Example: `MyFrame#SA#` creates a frame with the preset size "SA"
+   - The code must be followed by a # symbol
+
+### Available Size Codes
+
+The following preset sizes are available:
+
+| Code | Size (inches) | Description |
+|------|--------------|-------------|
+| SA   | 12.73 × 7.16 | Standard A  |
+| SB   | 13.58 × 7.64 | Standard B  |
+| SC   | 14.81 × 8.33 | Standard C  |
+| LI   | 11.24 × 6.32 | Linear     |
+| WE   | 22.99 × 8.62 | Wide Extended |
+| WS   | 22.99 × 5.08 | Wide Standard |
+| WF   | 17.87 × 3.96 | Wide Focused  | 

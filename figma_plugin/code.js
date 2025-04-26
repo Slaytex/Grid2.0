@@ -143,12 +143,16 @@ figma.ui.postMessage({ type: 'init-ui' });
 figma.ui.postMessage({ type: 'get-screen-info' });
 // Handle messages from UI
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
+    if (msg.type === 'open-url' && msg.url) {
+        figma.openExternal(msg.url);
+        return;
+    }
     if (msg.type === 'scan-frames') {
         // Check if any frames are selected
         if (figma.currentPage.selection.length === 0) {
             figma.ui.postMessage({
                 type: 'selection-empty',
-                message: 'Please select frames to scan.'
+                message: 'Select frames then <span style="color: #77c2ea">Refresh</span>.'
             });
             return;
         }

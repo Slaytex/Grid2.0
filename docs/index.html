@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid 2.0 - Figma Plugin & Desktop App</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #ffffff;
+            --accent-color: #4CAF50;
+            --code-bg: #2d2d2d;
+            --section-bg: #252525;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: var(--section-bg);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo-container img {
+            height: 60px;
+            width: auto;
+        }
+
+        .splash-image {
+            max-width: 800px;
+            width: 100%;
+            height: auto;
+            margin: 2rem auto;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        section {
+            background-color: var(--section-bg);
+            padding: 2rem;
+            margin: 2rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-top: 2rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .size-codes {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        .size-codes th,
+        .size-codes td {
+            padding: 0.75rem;
+            text-align: left;
+            border: 1px solid var(--code-bg);
+        }
+
+        .size-codes th {
+            background-color: var(--code-bg);
+        }
+
+        .steps {
+            list-style-type: none;
+            counter-reset: step-counter;
+        }
+
+        .steps li {
+            margin-bottom: 1rem;
+            padding-left: 2.5rem;
+            position: relative;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            width: 1.8rem;
+            height: 1.8rem;
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .help-link {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .help-link:hover {
+            background-color: #3d8c40;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-container">
+            <img src="assets/grid-icon.svg" alt="Grid Plugin Icon">
+            <h1>Grid 2.0</h1>
+        </div>
+        <img src="assets/grid-splash.png" alt="Grid App Splash" class="splash-image">
+        <a href="https://css-playground-f31b22.webflow.io/" target="_blank" class="help-link">Visit Helper Website →</a>
+    </header>
+
+    <main>
+        <section>
+            <h2>Overview</h2>
+            <p>Grid 2.0 is a powerful combination of a desktop application and Figma plugin that streamlines the process of creating and managing grid layouts in Figma. The system provides precise control over frame sizes and supports both custom dimensions and preset screen sizes.</p>
+        </section>
+
+        <section>
+            <h2>Getting Started</h2>
+            <ol class="steps">
+                <li>Download and install the Grid 2.0 desktop application</li>
+                <li>Install the Grid 2.0 Figma plugin from the Figma plugin marketplace</li>
+                <li>Launch the Grid App first - it will start a local server and wait for connections</li>
+                <li>Open your Figma project and access the Grid 2.0 plugin</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>Frame Naming Conventions</h2>
+            <p>Grid 2.0 supports two ways to specify frame sizes:</p>
+            
+            <h3>1. Custom Size Format</h3>
+            <p>Use this format to create frames with custom dimensions:</p>
+            <code>frame-name#width×height</code>
+            <p>Example: <code>MyFrame#10×5</code> creates a frame named "MyFrame" with width=10 inches and height=5 inches</p>
+            
+            <h3>2. Preset Size Format</h3>
+            <p>Use this format to create frames with predefined sizes:</p>
+            <code>frame-name#code#</code>
+            <p>Example: <code>MyFrame#SA#</code> creates a frame with the preset "Standard A" size</p>
+        </section>
+
+        <section>
+            <h2>Available Size Codes</h2>
+            <table class="size-codes">
+                <tr>
+                    <th>Code</th>
+                    <th>Size (inches)</th>
+                    <th>Description</th>
+                </tr>
+                <tr>
+                    <td>SA</td>
+                    <td>12.73 × 7.16</td>
+                    <td>Standard A</td>
+                </tr>
+                <tr>
+                    <td>SB</td>
+                    <td>13.58 × 7.64</td>
+                    <td>Standard B</td>
+                </tr>
+                <tr>
+                    <td>SC</td>
+                    <td>14.81 × 8.33</td>
+                    <td>Standard C</td>
+                </tr>
+                <tr>
+                    <td>LI</td>
+                    <td>11.24 × 6.32</td>
+                    <td>Linear</td>
+                </tr>
+                <tr>
+                    <td>WE</td>
+                    <td>22.99 × 8.62</td>
+                    <td>Wide Extended</td>
+                </tr>
+                <tr>
+                    <td>WS</td>
+                    <td>22.99 × 5.08</td>
+                    <td>Wide Standard</td>
+                </tr>
+                <tr>
+                    <td>WF</td>
+                    <td>17.87 × 3.96</td>
+                    <td>Wide Focused</td>
+                </tr>
+            </table>
+        </section>
+
+        <section>
+            <h2>Using the Plugin</h2>
+            <ol class="steps">
+                <li>Make sure the Grid App is running and showing "Waiting for connection"</li>
+                <li>Name your frames using either the custom size format or preset size codes</li>
+                <li>Select the frames you want to process in Figma</li>
+                <li>Open the Grid 2.0 plugin</li>
+                <li>Click the refresh icon to update the frame list</li>
+                <li>Click "Send" to process the selected frames</li>
+                <li>The Grid App will automatically adjust the frame sizes according to your specifications</li>
+            </ol>
+        </section>
+
+        <section>
+            <h2>Troubleshooting</h2>
+            <h3>Common Issues</h3>
+            <ul class="steps">
+                <li>Ensure Grid App is running before using the Figma plugin</li>
+                <li>Verify frame names follow the correct format (either custom size or preset code)</li>
+                <li>Check if your firewall is blocking the connection between the app and plugin</li>
+                <li>Make sure frames are selected before clicking the send button</li>
+            </ul>
+        </section>
+    </main>
+</body>
+</html> 
