@@ -328,18 +328,12 @@ function createApplicationMenu() {
       ]
     },
     {
-      label: 'File',
+      label: 'More',  // Changed from 'File' to 'More'
       submenu: [
         {
-          label: 'New Window',
-          accelerator: 'CmdOrCtrl+N',
+          label: 'How to use Grid',  // Added new help menu item
           click() {
-            if (mainWindow) {
-              mainWindow.show()
-              mainWindow.setFullScreen(true)
-            } else {
-              createWindow()
-            }
+            require('electron').shell.openExternal('https://css-playground-f31b22.webflow.io/');
           }
         },
         { type: 'separator' },
@@ -393,7 +387,18 @@ function createApplicationMenu() {
           }
         },
         { type: 'separator' },
-        { role: 'close' }
+        {
+          label: 'Minimize Window',  // Changed from 'Close' to 'Minimize Window'
+          click() {
+            if (mainWindow) {
+              mainWindow.setFullScreen(false);  // First exit fullscreen
+              // Give it a moment to exit fullscreen before minimizing
+              setTimeout(() => {
+                mainWindow.minimize();
+              }, 100);
+            }
+          }
+        }
       ]
     }
   ]
