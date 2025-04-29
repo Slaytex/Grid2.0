@@ -249,9 +249,19 @@
     color: #00FF00;
     font-family: monospace;
     font-size: 9px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .console.visible {
+    max-height: 150px;
+  }
+
+  .console-content {
     height: 150px;
-    overflow-y: auto;  /* Allow vertical scroll */
-    overflow-x: hidden; /* Prevent horizontal scroll */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .console-header {
@@ -473,6 +483,12 @@
     background: #1E1E1E;
     border-top: 1px solid #333;
     text-align: center;
+    cursor: pointer; /* Add pointer cursor to indicate clickable */
+    transition: background-color 0.2s ease;
+  }
+
+  .footer:hover {
+    background: #2a2a2a; /* Subtle hover effect */
   }
 
   .footer-content {
@@ -563,7 +579,6 @@
 
 <div class="footer">
   <div class="footer-content">
-    By
     <svg width="124" height="26" viewBox="0 0 124 26" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M13.4656 20.8193C13.2791 21.325 13.3884 21.9691 13.3714 22.5143C13.3686 22.5972 13.4185 23.4843 13.184 23.1726C13.2113 22.358 13.104 21.5255 13.2773 20.7251C13.3573 20.7449 13.443 20.8155 13.4656 20.8193Z" fill="#577896"/>
       <path d="M27.8133 15.8039C27.6268 16.3096 27.736 16.9537 27.7191 17.4989C27.7163 17.5818 27.7662 18.4689 27.5317 18.1572C27.559 17.3426 27.4516 16.5102 27.6249 15.7097C27.705 15.7295 27.7906 15.8001 27.8133 15.8039Z" fill="#577896"/>
@@ -1171,4 +1186,10 @@ function updateScreenInfoDisplay() {
     infoElement.innerHTML = '<div class="error-info">Error displaying Grid Generator info</div>';
   }
 }
+
+// Add this near the end of your script section
+document.querySelector('.footer').addEventListener('click', () => {
+  const console = document.querySelector('.console');
+  console.classList.toggle('visible');
+});
 </script> 
