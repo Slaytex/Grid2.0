@@ -24,6 +24,13 @@
             "pxHeight": 2880,
             "ppi": 218
         },
+        "name": "LG 4K 27",
+        "width": 23.5,
+        "height": 13.2,
+        "pxWidth": 3840,
+        "pxHeight": 2160,
+        "ppi": 163
+    },
         {
             "name": "Samsung Serif 55",
             "width": 47.91,
