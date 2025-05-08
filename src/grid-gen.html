@@ -326,6 +326,143 @@
               windowEl.classList.add('window-controls-visible');
             }
             
+            // ADD DRAG AND RESIZE LOGIC HERE
+            // Make window draggable
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            
+            dragHandle.addEventListener('mousedown', (e) => {
+                bringToFront(windowEl); // Bring window to front when starting to drag
+                isDragging = true;
+                initialX = e.clientX - windowEl.offsetLeft;
+                initialY = e.clientY - windowEl.offsetTop;
+            });
+        
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    windowEl.style.left = `${currentX}px`;
+                    windowEl.style.top = `${currentY}px`;
+                }
+            });
+        
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        
+            // Make window resizable
+            let isResizing = false;
+            let initialWidth = 0;
+            let initialHeight = 0;
+            let initialMouseX = 0; // Renamed to avoid conflict
+            let initialMouseY = 0; // Renamed to avoid conflict
+            
+            resizeHandle.addEventListener('mousedown', (e) => {
+                bringToFront(windowEl); // Bring window to front when starting to resize
+                isResizing = true;
+                initialWidth = parseInt(windowEl.style.width);
+                initialHeight = parseInt(windowEl.style.height);
+                initialMouseX = e.clientX;
+                initialMouseY = e.clientY;
+                e.preventDefault(); // Prevent text selection during resize
+            });
+        
+            document.addEventListener('mousemove', (e) => {
+                if (isResizing) {
+                    const width = initialWidth + (e.clientX - initialMouseX);
+                    const height = initialHeight + (e.clientY - initialMouseY);
+                    windowEl.style.width = `${width}px`;
+                    windowEl.style.height = `${height}px`;
+                    
+                    // Update size indicator showing inches directly
+                    sizeIndicator.style.display = 'block';
+                    const widthInches = (width/window.gridSystem.gridSpacingX).toFixed(1);
+                    const heightInches = (height/window.gridSystem.gridSpacingY).toFixed(1);
+                    sizeIndicator.textContent = `${widthInches}" × ${heightInches}"`;
+                    sizeIndicator.style.left = `${e.clientX + 20}px`;
+                    sizeIndicator.style.top = `${e.clientY + 20}px`;
+                }
+            });
+        
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    sizeIndicator.style.display = 'none';
+                }
+            });
+            
+            // Bring window to front when clicked
+            windowEl.addEventListener('mousedown', () => {
+                bringToFront(windowEl);
+            });
+            // END OF ADDED DRAG AND RESIZE LOGIC
+            
+            // ADD BACK CLICK-TO-PLACE LOGIC
+            let placementMode = false;
+            dragHandle.addEventListener('click', (e) => {
+                // Toggle placement mode ONLY if not currently dragging
+                if (!isDragging) {
+                    e.stopPropagation(); // Prevent triggering window's mousedown
+                    placementMode = !placementMode;
+                    dragHandle.style.background = placementMode ? 
+                        'rgba(0, 255, 0, 0.5)' : 'rgba(255, 165, 0, 0.7)'; // Green when active
+                    
+                    const cursor = document.querySelector('.grid-cursor');
+                    if (placementMode) {
+                        cursor.style.display = 'block';
+                        document.addEventListener('mousemove', updateGridCursor);
+                        // Add listener to container for placement click
+                        document.getElementById('container').addEventListener('click', placeWindow, { once: true }); // Use once to auto-remove listener
+                    } else {
+                        cursor.style.display = 'none';
+                        document.removeEventListener('mousemove', updateGridCursor);
+                        // Explicitly remove listener if mode is toggled off
+                        document.getElementById('container').removeEventListener('click', placeWindow);
+                    }
+                }
+            });
+            
+            function placeWindow(e) {
+                if (placementMode && e.target === document.getElementById('container')) {
+                    const absoluteX = e.clientX;
+                    const absoluteY = e.clientY;
+                    
+                    // Set target position to the click coordinates directly (aligns top-left corner)
+                    const targetX = absoluteX;
+                    const targetY = absoluteY;
+                    
+                    windowEl.style.transition = 'left 0.3s ease-out, top 0.3s ease-out'; // Add smooth transition
+                    windowEl.style.left = `${targetX}px`;
+                    windowEl.style.top = `${targetY}px`;
+                    
+                    // Remove transition after animation completes
+                    setTimeout(() => {
+                        windowEl.style.transition = '';
+                    }, 300); // Match the transition duration
+                    
+                    // Exit placement mode
+                    placementMode = false;
+                    dragHandle.style.background = 'rgba(255, 165, 0, 0.7)'; // Reset handle color
+                    const cursor = document.querySelector('.grid-cursor');
+                    cursor.style.display = 'none';
+                    document.removeEventListener('mousemove', updateGridCursor);
+                } else if (placementMode) {
+                    // If clicked on something else while in placement mode, just exit placement mode
+                    placementMode = false;
+                    dragHandle.style.background = 'rgba(255, 165, 0, 0.7)';
+                    const cursor = document.querySelector('.grid-cursor');
+                    cursor.style.display = 'none';
+                    document.removeEventListener('mousemove', updateGridCursor);
+                    // Re-add listener if needed, or handle appropriately
+                    document.getElementById('container').removeEventListener('click', placeWindow);
+                }
+            }
+            // END OF CLICK-TO-PLACE LOGIC
+            
             container.appendChild(windowEl);
             updateWindowList();
             return windowEl;

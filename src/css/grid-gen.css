@@ -757,8 +757,8 @@ button:hover {
 .image-window.window-controls-visible .window-drag-handle,
 .image-window.window-controls-visible .window-close-button,
 .image-window.window-controls-visible .resize-handle {
-  opacity: 0.8;
-  pointer-events: auto;
+  opacity: 0.8 !important;
+  pointer-events: auto !important;
 }
 
 /* ===== END WINDOW CONTROLS ===== */
