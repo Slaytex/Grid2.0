@@ -156,3 +156,7 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Figma Plugin Distribution
+figma_plugin/*.zip
+figma_plugin/dist/
