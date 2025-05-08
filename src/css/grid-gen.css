@@ -686,18 +686,7 @@ button:hover {
   filter: brightness(2) !important;
 }
 
-/* Show buttons on hover */
-.figma-window:hover .window-drag-handle,
-.figma-window:hover .window-close-button,
-.figma-window:hover .window-save-button,
-.figma-window:hover .resize-handle,
-.image-window:hover .window-drag-handle,
-.image-window:hover .window-close-button,
-.image-window:hover .resize-handle {
-  opacity: 0.8 !important;
-}
-
-/* Button hover effects */
+/* Button hover effects (keep these for when controls are visible) */
 .window-drag-handle:hover,
 .window-close-button:hover,
 .window-save-button:hover {
@@ -749,3 +738,27 @@ button:hover {
 .image-window * {
   box-sizing: border-box !important;
 }
+
+/* Hide controls by default */
+.window-drag-handle,
+.window-close-button,
+.window-save-button,
+.resize-handle {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.2s ease !important;
+}
+
+/* Show controls when the parent window has the visible class */
+.figma-window.window-controls-visible .window-drag-handle,
+.figma-window.window-controls-visible .window-close-button,
+.figma-window.window-controls-visible .window-save-button,
+.figma-window.window-controls-visible .resize-handle,
+.image-window.window-controls-visible .window-drag-handle,
+.image-window.window-controls-visible .window-close-button,
+.image-window.window-controls-visible .resize-handle {
+  opacity: 0.8 !important;
+  pointer-events: auto !important;
+}
+
+/* ===== END WINDOW CONTROLS ===== */

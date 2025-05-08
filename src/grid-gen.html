@@ -63,6 +63,7 @@
         <input type="file" id="image-input" accept="image/*" style="display: none;">
         <button id="close-all-button">Close All Frames</button>
         <button id="border-toggle">Border Off</button>
+        <button id="toggle-controls-button">Show Frame Controls</button>
         <div class="divider"></div>
         <div class="h1-header">Frame Presets</div>
         <div id="active-windows"></div>
@@ -94,24 +95,41 @@
         document.body.style.backgroundColor = '#000000';
 
         // Load monitor presets
+        console.log('[Renderer] Attempting to load monitor presets...');
         fetch('monitor-presets.json')
-            .then(response => response.json())
+            .then(response => {
+                console.log('[Renderer] Fetch response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                console.log('[Renderer] Loading monitor presets:', data);
+                console.log('[Renderer] Successfully loaded monitor presets data:', data);
                 const presetsContainer = document.getElementById('monitor-presets');
                 if (!presetsContainer) {
-                    console.error('Could not find #monitor-presets container');
+                    console.error('[Renderer] CRITICAL ERROR: Could not find #monitor-presets container element!');
                     return;
                 }
+                console.log('[Renderer] Found #monitor-presets container. Clearing and adding buttons...');
                 presetsContainer.innerHTML = ''; // Clear existing buttons
-                data.presets.forEach(preset => {
-                    console.log('[Renderer] Processing preset:', preset);
+                if (!data || !data.presets || !Array.isArray(data.presets)) {
+                    console.error('[Renderer] Invalid presets data format:', data);
+                    presetsContainer.innerHTML = '<p style="color:red;">Error: Invalid preset data format.</p>';
+                    return;
+                }
+                data.presets.forEach((preset, index) => {
+                    console.log(`[Renderer] Processing preset ${index}:`, preset);
+                    if (!preset || typeof preset !== 'object') {
+                        console.warn(`[Renderer] Skipping invalid preset at index ${index}:`, preset);
+                        return; // Skip invalid preset entry
+                    }
                     const button = document.createElement('button');
                     // Display name, dimensions in inches, and pixel dimensions if available
                     // Values are already in inches, no conversion needed
-                    const widthInches = preset.width.toFixed(1);
-                    const heightInches = preset.height.toFixed(1);
-                    let buttonText = `${preset.name} | ${widthInches}×${heightInches}"`;
+                    const widthInches = (preset.width !== null && preset.width !== undefined) ? preset.width.toFixed(1) : 'N/A';
+                    const heightInches = (preset.height !== null && preset.height !== undefined) ? preset.height.toFixed(1) : 'N/A';
+                    let buttonText = `${preset.name || 'Unnamed Preset'} | ${widthInches}×${heightInches}"`;
                     if (preset.pxWidth && preset.pxHeight) {
                         buttonText += ` (${preset.pxWidth}×${preset.pxHeight}px)`;
                     }
@@ -127,19 +145,32 @@
                     button.onclick = () => {
                         console.log('[Renderer] Preset button clicked. Dataset:', button.dataset);
                         // Values are already in inches
-                        const widthInches = parseFloat(button.dataset.width).toFixed(1);
-                        const heightInches = parseFloat(button.dataset.height).toFixed(1);
-                        document.getElementById('monitor-width').value = widthInches;
-                        document.getElementById('monitor-height').value = heightInches;
+                        const widthVal = parseFloat(button.dataset.width);
+                        const heightVal = parseFloat(button.dataset.height);
+                        // Update inputs only if values are valid numbers
+                        if (!isNaN(widthVal)) {
+                           document.getElementById('monitor-width').value = widthVal.toFixed(1);
+                        }
+                         if (!isNaN(heightVal)) {
+                           document.getElementById('monitor-height').value = heightVal.toFixed(1);
+                         }
                         // Store the full preset data globally or pass it to initializeGrid if needed
                         window.selectedPresetData = button.dataset; // Store globally for initializeGrid to access
                         initializeGrid();
                     };
                     presetsContainer.appendChild(button);
                 });
-                console.log('[Renderer] Finished loading monitor presets.');
+                console.log('[Renderer] Finished adding monitor preset buttons.');
             })
-            .catch(error => console.error('Error loading presets:', error));
+            .catch(error => {
+                 console.error('[Renderer] Error loading or processing monitor presets:', error);
+                 const presetsContainer = document.getElementById('monitor-presets');
+                 if(presetsContainer) {
+                     presetsContainer.innerHTML = `<p style="color:red;">Error loading presets: ${error.message}</p>`;
+                 } else {
+                      console.error('[Renderer] Could not display error message because #monitor-presets container not found.')
+                 }
+             });
 
         console.log('Checking if initializeGrid is available:', typeof initializeGrid);
         // We'll add window spawning functionality here
@@ -197,6 +228,23 @@
         // Window management
         let windows = [];
         let presets = [];  // Store presets separately from active windows
+
+        let windowControlsVisible = false; // State for window controls visibility
+
+        document.getElementById('toggle-controls-button').addEventListener('click', () => {
+          windowControlsVisible = !windowControlsVisible;
+          const button = document.getElementById('toggle-controls-button');
+          button.textContent = windowControlsVisible ? 'Hide Frame Controls' : 'Show Frame Controls';
+          
+          // Update all existing windows
+          document.querySelectorAll('.figma-window, .image-window').forEach(windowEl => {
+            if (windowControlsVisible) {
+              windowEl.classList.add('window-controls-visible');
+            } else {
+              windowEl.classList.remove('window-controls-visible');
+            }
+          });
+        });
 
         function createWindow(config) {
             const container = document.getElementById('container');
@@ -273,98 +321,12 @@
             webview.style.border = 'none';
             windowEl.appendChild(webview);
 
+            // Apply controls visibility class if needed
+            if (windowControlsVisible) {
+              windowEl.classList.add('window-controls-visible');
+            }
+            
             container.appendChild(windowEl);
-
-            // Click-to-place functionality
-            let placementMode = false;
-            dragHandle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                placementMode = !placementMode;
-                dragHandle.style.background = placementMode ? 
-                    'rgba(0, 255, 0, 0.5)' : 'rgba(255, 165, 0, 0.5)';
-                
-                const cursor = document.querySelector('.grid-cursor');
-                if (placementMode) {
-                    cursor.style.display = 'block';
-                    document.addEventListener('mousemove', updateGridCursor);
-                } else {
-                    cursor.style.display = 'none';
-                    document.removeEventListener('mousemove', updateGridCursor);
-                }
-                
-                if (placementMode) {
-                    document.getElementById('container').addEventListener('click', placeWindow);
-                } else {
-                    document.getElementById('container').removeEventListener('click', placeWindow);
-                }
-            });
-            
-            function placeWindow(e) {
-                const absoluteX = e.clientX;
-                const absoluteY = e.clientY;
-                
-                windowEl.style.transition = 'all 0.3s ease-in-out'; // Add smooth transition
-                windowEl.style.position = 'fixed';
-                windowEl.style.left = `${absoluteX}px`;
-                windowEl.style.top = `${absoluteY}px`;
-                
-                // Remove transition after animation completes
-                setTimeout(() => {
-                    windowEl.style.transition = '';
-                }, 300); // Match the transition duration
-                
-                placementMode = false;
-                dragHandle.style.background = 'rgba(255, 165, 0, 0.5)';
-                const cursor = document.querySelector('.grid-cursor');
-                cursor.style.display = 'none';
-                document.removeEventListener('mousemove', updateGridCursor);
-                document.getElementById('container').removeEventListener('click', placeWindow);
-            }
-
-            function handleMouseMove(e) {
-                if (isResizing) {
-                    const width = initialWidth + (e.clientX - initialMouseX);
-                    const height = initialHeight + (e.clientY - initialMouseY);
-                    windowEl.style.width = `${width}px`;
-                    windowEl.style.height = `${height}px`;
-                    
-                    // Update size indicator showing inches directly
-                    sizeIndicator.style.display = 'block';
-                    const widthInches = (width/window.gridSystem.gridSpacingX).toFixed(1);
-                    const heightInches = (height/window.gridSystem.gridSpacingY).toFixed(1);
-                    sizeIndicator.textContent = `${widthInches}" × ${heightInches}"`;
-                    sizeIndicator.style.left = `${e.clientX + 20}px`;
-                    sizeIndicator.style.top = `${e.clientY + 20}px`;
-                }
-            }
-            
-            function handleMouseUp() {
-                if (isResizing) {
-                    isResizing = false;
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
-                    sizeIndicator.style.display = 'none';
-                }
-            }
-
-            resizeHandle.addEventListener('mousedown', (e) => {
-                isResizing = true;
-                initialMouseX = e.clientX;
-                initialMouseY = e.clientY;
-                initialWidth = parseInt(windowEl.style.width);
-                initialHeight = parseInt(windowEl.style.height);
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-                e.preventDefault();
-            });
-
-            // Clean up event listeners when window is closed
-            closeButton.addEventListener('click', () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-                windowEl.remove();
-            });
-
             updateWindowList();
             return windowEl;
         }
@@ -750,53 +712,14 @@
                 windowEl.remove();
             });
 
-            container.appendChild(windowEl);
-
-            // Click-to-place functionality
-            let placementMode = false;
-            dragHandle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                placementMode = !placementMode;
-                dragHandle.style.background = placementMode ? 
-                    'rgba(0, 255, 0, 0.5)' : 'rgba(255, 165, 0, 0.5)';
-                
-                const cursor = document.querySelector('.grid-cursor');
-                if (placementMode) {
-                    cursor.style.display = 'block';
-                    document.addEventListener('mousemove', updateGridCursor);
-                } else {
-                    cursor.style.display = 'none';
-                    document.removeEventListener('mousemove', updateGridCursor);
-                }
-                
-                if (placementMode) {
-                    document.getElementById('container').addEventListener('click', placeWindow);
-                } else {
-                    document.getElementById('container').removeEventListener('click', placeWindow);
-                }
-            });
-
-            function placeWindow(e) {
-                const absoluteX = e.clientX;
-                const absoluteY = e.clientY;
-                
-                windowEl.style.transition = 'all 0.3s ease-in-out'; // Add smooth transition
-                windowEl.style.position = 'fixed';
-                windowEl.style.left = `${absoluteX}px`;
-                windowEl.style.top = `${absoluteY}px`;
-                
-                // Remove transition after animation completes
-                setTimeout(() => {
-                    windowEl.style.transition = '';
-                }, 300); // Match the transition duration
-                
-                placementMode = false;
-                dragHandle.style.background = 'rgba(255, 165, 0, 0.5)';
-                const cursor = document.querySelector('.grid-cursor');
-                cursor.style.display = 'none';
-                document.removeEventListener('mousemove', updateGridCursor);
-                document.getElementById('container').removeEventListener('click', placeWindow);
+            // Apply controls visibility class if needed
+            if (windowControlsVisible) {
+              windowEl.classList.add('window-controls-visible');
             }
+            
+            container.appendChild(windowEl);
+            updateWindowList();
+            return windowEl;
         }
 
         // Add click handler for spawn image button
