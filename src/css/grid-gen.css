@@ -744,9 +744,9 @@ button:hover {
 .window-close-button,
 .window-save-button,
 .resize-handle {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: opacity 0.2s ease !important;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
 /* Show controls when the parent window has the visible class */
@@ -757,8 +757,8 @@ button:hover {
 .image-window.window-controls-visible .window-drag-handle,
 .image-window.window-controls-visible .window-close-button,
 .image-window.window-controls-visible .resize-handle {
-  opacity: 0.8 !important;
-  pointer-events: auto !important;
+  opacity: 0.8;
+  pointer-events: auto;
 }
 
 /* ===== END WINDOW CONTROLS ===== */
