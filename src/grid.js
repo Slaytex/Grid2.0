@@ -263,12 +263,40 @@ function animateGrid() {
             const isComplete = draw();
             if (isComplete) {
                 console.log("Grid animation complete");
-                resolve();
+                
+                // Animate brightness slider to 10% (value 10)
+                const brightnessSlider = document.getElementById('brightness-slider');
+                const startValue = parseInt(brightnessSlider.value); // Current value (likely 50)
+                const endValue = 10; // Target value (10%)
+                const duration = 1000; // 1 second
+                const startTime = performance.now();
+
+                function animateSlider(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // Calculate current value using easeOutQuad easing
+                    const easeOutQuad = 1 - (1 - progress) * (1 - progress);
+                    const currentValue = startValue + (endValue - startValue) * easeOutQuad;
+                    
+                    // Update slider and trigger the input event
+                    brightnessSlider.value = currentValue;
+                    brightnessSlider.dispatchEvent(new Event('input'));
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateSlider);
+                    }
+                }
+
+                // Start the brightness animation
+                requestAnimationFrame(animateSlider);
+                
+                resolve(); // Resolve the main grid animation promise
             } else {
                 requestAnimationFrame(animate);
             }
         }
-        
+
         animate();
     });
 }
