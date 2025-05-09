@@ -7,6 +7,7 @@ let gridSpacingY = null;
 let borderEnabled = false;
 let frameData = null;
 let zIndexCounter = 100; // Starting z-index for windows
+let currentGlobalBorderThickness = 0.25; // Default, will be updated via IPC
 
 // Remove CM to inches conversion factor
 // const CM_TO_INCHES = 0.393701; // 1 cm = 0.393701 inches
@@ -301,28 +302,23 @@ function animateGrid() {
     });
 }
 
-function toggleBorder() {
-    borderEnabled = !borderEnabled;
-    const toggleButton = document.getElementById('border-toggle');
-    toggleButton.style.background = borderEnabled ? '#437eba' : '#426e9b';
-    toggleButton.textContent = borderEnabled ? 'Border On' : 'Border Off';
-    
-    // Select both figma-window and image-window elements
+function applyWindowBorders(isEnabled, thicknessInches) {
+    console.log(`[Grid.js] applyWindowBorders called. Enabled: ${isEnabled}, Thickness: ${thicknessInches}"`);
     const windows = document.querySelectorAll('.figma-window, .image-window');
     windows.forEach(windowEl => {
-        if (borderEnabled) {
-            // Use 3/8 inch (0.375 inch) for border width for consistent physical size
-            const borderWidth = `${0.375 * window.gridSystem.inchGridSpacingX}px`;
-            windowEl.style.setProperty('--border-width', borderWidth);
+        if (isEnabled) {
+            let borderWidthPx = '8px'; // Fallback
+            if (window.gridSystem && window.gridSystem.inchGridSpacingX && thicknessInches) {
+                borderWidthPx = `${parseFloat(thicknessInches) * window.gridSystem.inchGridSpacingX}px`;
+            }
+            console.log(`[Grid.js] Applying border width: ${borderWidthPx} to window.`);
             
-            // Apply border directly like in the test file
-            windowEl.style.border = `${borderWidth} solid black`;
-            windowEl.style.borderRadius = borderWidth;
+            windowEl.style.setProperty('--border-width', borderWidthPx);
+            windowEl.style.border = `${borderWidthPx} solid black`;
+            windowEl.style.borderRadius = borderWidthPx;
             windowEl.style.boxShadow = '0px 40px 65px 2px rgba(0, 0, 0, 0.44)';
-            
             windowEl.classList.add('border-enabled');
         } else {
-            // Remove border properties
             windowEl.style.border = 'none';
             windowEl.style.borderRadius = '0px';
             windowEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
@@ -331,17 +327,26 @@ function toggleBorder() {
     });
 }
 
+// Listen for border state updates from grid-gen.html (via main process, then preload)
+if (window.electron && typeof window.electron.onUpdateBorderState === 'function') {
+    window.electron.onUpdateBorderState((isEnabled, thicknessInches) => {
+        console.log(`[Grid.js] Received border state update. Enabled: ${isEnabled}, Thickness: ${thicknessInches}`);
+        borderEnabled = isEnabled; // Update global state if still needed elsewhere, or remove if fully managed by applyWindowBorders
+        currentGlobalBorderThickness = thicknessInches;
+        applyWindowBorders(isEnabled, thicknessInches);
+    });
+} else {
+    console.error("[Grid.js] window.electron.onUpdateBorderState is not available. Border updates won't work.");
+}
+
 function createWindow(config) {
     // ... existing window creation code ...
     
     const windowEl = document.createElement('div');
     windowEl.className = 'figma-window';
     
-    // Apply border if enabled
-    if (borderEnabled) {
-        const borderWidth = 0.5 * gridSpacingX;
-        windowEl.style.border = `${borderWidth}px solid black`;
-    }
+    // Apply border if enabled initially
+    applyWindowBorders(borderEnabled, currentGlobalBorderThickness); // Use current global state
     
     // ... rest of existing window creation code ...
 }
@@ -644,16 +649,8 @@ function createImageWindow(config) {
     img.style.padding = '0';
     img.style.margin = '0';
     
-    // Apply border if enabled
-    if (borderEnabled) {
-        // Use 3/8 inch (0.375 inch) for border width
-        const borderWidth = `${0.375 * window.gridSystem.inchGridSpacingX}px`;
-        windowEl.style.setProperty('--border-width', borderWidth);
-        windowEl.style.border = `${borderWidth} solid black`; // Apply border directly to match test file
-        windowEl.style.borderRadius = borderWidth;
-        windowEl.style.boxShadow = '0px 40px 65px 2px rgba(0, 0, 0, 0.44)';
-        windowEl.classList.add('border-enabled');
-    }
+    // Apply border if enabled initially
+    applyWindowBorders(borderEnabled, currentGlobalBorderThickness); // Use current global state
     
     // Add window controls as direct siblings at the same level as the image
     windowEl.appendChild(img);

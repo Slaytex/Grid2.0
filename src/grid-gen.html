@@ -86,8 +86,27 @@
         <button id="spawn-image-button">Spawn Image</button>
         <input type="file" id="image-input" accept="image/*" style="display: none;">
         <button id="close-all-button">Close All Frames</button>
-        <button id="border-toggle">Border Off</button>
-        <button id="toggle-controls-button">Show Frame Controls</button>
+        
+        <div class="toggle-switch-container" id="border-toggle-container">
+          <input type="checkbox" id="border-toggle-checkbox" class="toggle-checkbox">
+          <label for="border-toggle-checkbox" class="toggle-label">
+            <span class="toggle-button"></span>
+          </label>
+          <span class="toggle-text">Border</span>
+        </div>
+        
+        <div class="slider-container" id="border-thickness-slider-container" style="display: none;">
+          <input type="range" id="border-thickness-slider" class="control-slider" min="0.05" max="0.5" step="0.01" value="0.25">
+          <span id="border-thickness-value">0.25"</span>
+        </div>
+
+        <div class="toggle-switch-container">
+          <input type="checkbox" id="toggle-controls-checkbox" class="toggle-checkbox">
+          <label for="toggle-controls-checkbox" class="toggle-label">
+            <span class="toggle-button"></span>
+          </label>
+          <span class="toggle-text">Frame Controls</span>
+        </div>
         <div class="divider"></div>
         <div class="h1-header">Frame Presets</div>
         <div id="active-windows"></div>
@@ -254,13 +273,18 @@
         let presets = [];  // Store presets separately from active windows
 
         let windowControlsVisible = false; // State for window controls visibility
+        let borderEnabledState = false; // State for border visibility
+        let currentBorderThickness = 0.25; // Default border thickness in inches
 
-        document.getElementById('toggle-controls-button').addEventListener('click', () => {
-          windowControlsVisible = !windowControlsVisible;
-          const button = document.getElementById('toggle-controls-button');
-          button.textContent = windowControlsVisible ? 'Hide Frame Controls' : 'Show Frame Controls';
+        const toggleControlsCheckbox = document.getElementById('toggle-controls-checkbox');
+        const toggleControlsText = document.querySelector('.toggle-text'); // Get the text span
+
+        toggleControlsCheckbox.addEventListener('change', () => {
+          windowControlsVisible = toggleControlsCheckbox.checked;
           
-          // Update all existing windows
+          // No need to update button text anymore, the switch itself is the visual indicator
+          // toggleControlsText.textContent = windowControlsVisible ? 'Controls ON' : 'Controls OFF'; // Optional: change text if desired
+          
           document.querySelectorAll('.figma-window, .image-window').forEach(windowEl => {
             if (windowControlsVisible) {
               windowEl.classList.add('window-controls-visible');
@@ -268,6 +292,33 @@
               windowEl.classList.remove('window-controls-visible');
             }
           });
+        });
+
+        const borderToggleCheckbox = document.getElementById('border-toggle-checkbox');
+        const borderThicknessSlider = document.getElementById('border-thickness-slider');
+        const borderThicknessValueDisplay = document.getElementById('border-thickness-value');
+        const borderThicknessSliderContainer = document.getElementById('border-thickness-slider-container');
+
+        borderToggleCheckbox.addEventListener('change', () => {
+          borderEnabledState = borderToggleCheckbox.checked;
+          if (borderEnabledState) {
+            borderThicknessSliderContainer.classList.add('visible');
+            borderThicknessSliderContainer.style.display = 'flex'; // Ensure it overrides inline style
+          } else {
+            borderThicknessSliderContainer.classList.remove('visible');
+            borderThicknessSliderContainer.style.display = 'none';
+          }
+          // Call the main border update function (which we'll modify in grid.js)
+          window.electron.updateBorderState(borderEnabledState, currentBorderThickness);
+        });
+
+        borderThicknessSlider.addEventListener('input', () => {
+          currentBorderThickness = parseFloat(borderThicknessSlider.value);
+          borderThicknessValueDisplay.textContent = `${currentBorderThickness.toFixed(2)}"`;
+          // If border is already enabled, update its thickness
+          if (borderEnabledState) {
+            window.electron.updateBorderState(borderEnabledState, currentBorderThickness);
+          }
         });
 
         function createWindow(config) {
@@ -963,14 +1014,14 @@
         };
 
         function toggleBorder() {
-            borderEnabled = !borderEnabled;
+            borderEnabledState = !borderEnabledState;
             const toggleButton = document.getElementById('border-toggle');
-            toggleButton.style.background = borderEnabled ? '#437eba' : '#426e9b';
-            toggleButton.textContent = borderEnabled ? 'Border On' : 'Border Off';
+            toggleButton.style.background = borderEnabledState ? '#437eba' : '#426e9b';
+            toggleButton.textContent = borderEnabledState ? 'Border On' : 'Border Off';
             
             const windows = document.querySelectorAll('.figma-window');
             windows.forEach(windowEl => {
-                if (borderEnabled) {
+                if (borderEnabledState) {
                     windowEl.style.setProperty('--border-width', `${0.5 * gridSpacingX}px`);
                     windowEl.classList.add('border-enabled');
                 } else {

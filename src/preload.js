@@ -30,5 +30,22 @@ contextBridge.exposeInMainWorld('electron', {
     updateGridSystem: (gridSystem) => {
         console.log('[Preload] Sending grid-system-updated to main:', gridSystem);
         ipcRenderer.send('grid-system-updated', gridSystem);
+    },
+
+    onFigmaFrameSelected: (callback) => {
+        ipcRenderer.on('figma-frame-selected', (event, frameData) => {
+            // frameData includes { name, url, widthInches, heightInches }
+            callback(frameData);
+        });
+    },
+
+    // IPC for border state and thickness updates
+    updateBorderState: (isEnabled, thicknessInches) => {
+        ipcRenderer.send('update-border-state', { isEnabled, thicknessInches });
+    },
+    onUpdateBorderState: (callback) => {
+        ipcRenderer.on('border-state-updated-from-main', (event, { isEnabled, thicknessInches }) => {
+            callback(isEnabled, thicknessInches);
+        });
     }
 }) 

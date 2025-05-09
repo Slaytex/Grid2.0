@@ -762,3 +762,114 @@ button:hover {
 }
 
 /* ===== END WINDOW CONTROLS ===== */
+
+/* Toggle Switch for Frame Controls */
+.toggle-switch-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px; /* Same margin as other buttons */
+  padding: 8px 0; /* Match button vertical padding */
+}
+
+.toggle-checkbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-label {
+  display: inline-block;
+  width: 40px; /* Width of the toggle background */
+  height: 20px; /* Height of the toggle background */
+  background-color: #4a4a4a; /* Darker grey for off state */
+  border-radius: 10px; /* Rounded corners for the background */
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-button {
+  content: '';
+  position: absolute;
+  width: 16px; /* Diameter of the toggle circle */
+  height: 16px; /* Diameter of the toggle circle */
+  background-color: #e0e0e0; /* Light grey for the button itself */
+  border-radius: 50%; /* Make it a circle */
+  top: 2px; /* Position it vertically centered */
+  left: 2px; /* Start position for off state */
+  transition: transform 0.2s ease;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #4CAF50; /* Green for on state (accent color) */
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-button {
+  transform: translateX(20px); /* Move circle to the right for on state */
+  background-color: #ffffff; /* White button when on */
+}
+
+.toggle-text {
+  margin-left: 10px;
+  font-size: 12px;
+  color: var(--text-color);
+  user-select: none;
+}
+
+/* Styles for the Border Toggle and Slider */
+#border-toggle-container {
+  /* Uses existing .toggle-switch-container styles */
+  /* Add any specific overrides if needed */
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 4px 0; /* Align with toggle switch vertical padding */
+}
+
+.control-slider {
+  flex-grow: 1;
+  width: auto; /* Override button-like width */
+  height: 8px; /* Standard slider height */
+  background: #4a4a4a; /* Darker track */
+  border-radius: 4px;
+  -webkit-appearance: none; /* Override default appearance */
+  appearance: none;
+  outline: none;
+  margin: 0; /* Remove button-like margin */
+}
+
+.control-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #e0e0e0; /* Light grey thumb */
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #4CAF50; /* Accent color border for visibility */
+}
+
+.control-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #e0e0e0;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #4CAF50;
+}
+
+#border-thickness-slider-container.visible {
+  display: flex !important; /* Use !important to ensure it overrides style="display:none;" */
+}
+
+#border-thickness-value {
+  font-size: 12px;
+  color: var(--text-color);
+  min-width: 40px; /* Ensure space for text */
+  text-align: right;
+}

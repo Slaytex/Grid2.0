@@ -308,7 +308,17 @@ if (!gotTheLock) {
     // When grid system is updated, broadcast to all connected Figma plugins
     console.log('[Main Process] Scheduling broadcastScreenInfo after grid update...');
     setTimeout(broadcastScreenInfo, 100); // Small delay remains useful
-  })
+  });
+
+  // Listen for border state updates from renderer and broadcast to all windows
+  ipcMain.on('update-border-state', (event, { isEnabled, thicknessInches }) => {
+    console.log(`[Main Process] Received update-border-state. Enabled: ${isEnabled}, Thickness: ${thicknessInches}`);
+    // Broadcast this to all renderer processes (e.g., if you have multiple windows in the future or for consistency)
+    if (mainWindow && mainWindow.webContents) {
+        mainWindow.webContents.send('border-state-updated-from-main', { isEnabled, thicknessInches });
+    }
+    // Potentially iterate over all BrowserWindows if you have more than one that needs this update.
+  });
 }
 
 function createApplicationMenu() {
