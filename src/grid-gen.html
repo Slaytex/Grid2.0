@@ -357,6 +357,7 @@
             closeButton.innerHTML = '<img src="./assets/close.svg" alt="Close">';
             closeButton.onclick = () => {
                 windowEl.remove();
+                sizeIndicator.remove(); // Also remove its size indicator
             };
             windowEl.appendChild(closeButton);
 
@@ -383,6 +384,21 @@
                 updateWindowList();
             };
             windowEl.appendChild(saveButton);
+
+            // Add Refresh button
+            const refreshButton = document.createElement('button');
+            refreshButton.className = 'window-refresh-button'; // New class for styling
+            refreshButton.innerHTML = '<img src="./assets/refresh-icon.svg" alt="Refresh">'; // Assuming you have a refresh.svg
+            refreshButton.onclick = () => {
+                const webview = windowEl.querySelector('webview');
+                if (webview) {
+                    webview.reload();
+                    console.log('Reloading webview content for window:', windowEl);
+                } else {
+                    console.error('Could not find webview to reload in window:', windowEl);
+                }
+            };
+            windowEl.appendChild(refreshButton);
 
             // Add resize handle
             const resizeHandle = document.createElement('div');

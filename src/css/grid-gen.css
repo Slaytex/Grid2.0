@@ -644,7 +644,8 @@ button:hover {
 /* Base style for window control buttons */
 .window-drag-handle,
 .window-close-button,
-.window-save-button {
+.window-save-button,
+.window-refresh-button {
   width: 30px !important;
   height: 30px !important;
   border-radius: 50% !important;
@@ -662,14 +663,19 @@ button:hover {
 
 /* Individual button styling */
 .window-drag-handle {
-  right: 90px !important;
+  left: 10px !important; /* Adjusted for new button order */
   background: rgba(255, 165, 0, 0.7) !important;
-  left: 10px !important; /* Left position overrides the right */
 }
 
 .window-save-button {
-  left: 50px !important;
+  left: 50px !important; /* Adjusted for new button order */
   background: rgba(128, 128, 128, 0.3) !important;
+}
+
+.window-refresh-button {
+  /* position it after save, before close */
+  left: 90px !important; 
+  background: rgba(67, 160, 71, 0.7) !important; /* Greenish for refresh */
 }
 
 .window-close-button {
@@ -680,15 +686,31 @@ button:hover {
 /* Button image styling */
 .window-drag-handle img,
 .window-save-button img,
+.window-refresh-button img, /* Added refresh button */
 .window-close-button img {
   width: 16px !important;
   height: 16px !important;
   filter: brightness(2) !important;
 }
 
+/* Show controls when the parent window has the visible class */
+.figma-window.window-controls-visible .window-drag-handle,
+.figma-window.window-controls-visible .window-close-button,
+.figma-window.window-controls-visible .window-save-button,
+.figma-window.window-controls-visible .window-refresh-button, /* Added refresh button */
+.figma-window.window-controls-visible .resize-handle,
+.image-window.window-controls-visible .window-drag-handle,
+.image-window.window-controls-visible .window-close-button,
+.image-window.window-controls-visible .window-refresh-button, /* Added refresh button */
+.image-window.window-controls-visible .resize-handle {
+  opacity: 0.8 !important;
+  pointer-events: auto !important;
+}
+
 /* Button hover effects (keep these for when controls are visible) */
 .window-drag-handle:hover,
 .window-close-button:hover,
+.window-refresh-button:hover, /* Added refresh button */
 .window-save-button:hover {
   opacity: 1 !important;
   transform: scale(1.1) !important;
@@ -696,6 +718,10 @@ button:hover {
 
 .window-save-button:hover {
   background: rgba(128, 128, 128, 0.5) !important;
+}
+
+.window-refresh-button:hover {
+  background: rgba(76, 175, 80, 0.9) !important; /* Darker green on hover */
 }
 
 .window-close-button:hover {
@@ -743,6 +769,7 @@ button:hover {
 .window-drag-handle,
 .window-close-button,
 .window-save-button,
+.window-refresh-button,
 .resize-handle {
   opacity: 0;
   pointer-events: none;
@@ -753,9 +780,11 @@ button:hover {
 .figma-window.window-controls-visible .window-drag-handle,
 .figma-window.window-controls-visible .window-close-button,
 .figma-window.window-controls-visible .window-save-button,
+.figma-window.window-controls-visible .window-refresh-button,
 .figma-window.window-controls-visible .resize-handle,
 .image-window.window-controls-visible .window-drag-handle,
 .image-window.window-controls-visible .window-close-button,
+.image-window.window-controls-visible .window-refresh-button,
 .image-window.window-controls-visible .resize-handle {
   opacity: 0.8 !important;
   pointer-events: auto !important;
