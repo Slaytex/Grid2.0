@@ -694,7 +694,9 @@
             
             // Calculate grid color based on brightness
             const brightnessValue = brightness / 100;
-            const rgbValue = Math.round(255 * (1 - brightnessValue));
+            // Invert the brightness value for grid lines (darker background = lighter lines)
+            const gridBrightness = 1 - brightnessValue;
+            const rgbValue = Math.round(255 * gridBrightness);
             
             // Adjust grid line opacity for better visibility
             const lineOpacity = Math.max(0.3, 0.5 - (brightnessValue * 0.3)); // More visible at darker backgrounds
@@ -761,6 +763,7 @@
             toggleGridBtn.style.backgroundColor = isGridVisible ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)';
             toggleGridBtn.querySelector('img').style.opacity = isGridVisible ? '1' : '0.3';
             
+            // Update grid with current brightness value
             updateGridLines(brightnessSlider.value);
         });
 
@@ -770,9 +773,8 @@
             const brightnessValue = brightness / 100;
             body.style.backgroundColor = `rgba(255, 255, 255, ${brightnessValue})`;
             
-            // We no longer update the grid when brightness changes
-            // Only background color changes now
-            console.log('Brightness changed: ' + brightness + '% - grid preserved');
+            // Update grid with new brightness value
+            updateGridLines(brightness);
         });
 
         // Modify the initialization
