@@ -111,6 +111,12 @@ body.app-ready {
     -moz-appearance: textfield;
 }
 
+.input-flex img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
 .divider {
     width: 100%;
     height: 1px;
@@ -472,6 +478,14 @@ button:hover {
     cursor: pointer;
 }
 
+.splash-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 300px;
+}
+
 #splash-screen.fade-in {
     opacity: 1;
 }
@@ -481,17 +495,34 @@ button:hover {
     pointer-events: none;
 }
 
-#splash-screen img {
-    max-width: 245px; /* Changed from 490px to half size */
+#splash-image {
+    width: 100%;
     height: auto;
-    transform: scale(1.3);
-    transition: transform 0.3s ease-out;
+    transition: opacity 0.3s ease-out;
     border: none;
     outline: none;
 }
 
-#splash-screen img:hover {
-    transform: scale(1.32);
+#splash-screen:hover #splash-image {
+    opacity: 0.9;
+}
+
+.splash-caption {
+    color: #fff;
+    text-align: center;
+    margin-top: 18px;
+    font-size: 7px;
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+/* Fix SVG sizing for buttons */
+.setup-content button img,
+#monitor-presets button img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-right: 5px;
 }
 
 .border-toggle-button {

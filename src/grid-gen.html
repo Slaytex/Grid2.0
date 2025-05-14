@@ -7,7 +7,10 @@
 </head>
 <body>
     <div id="splash-screen">
-        <img src="assets/grid-splash.png" alt="Grid 2.0">
+        <div class="splash-content">
+            <img src="assets/grid_splash.svg" alt="Grid Splash" id="splash-image">
+            <div class="splash-caption">Created by Chris Jacobs | 42Dot Silicon Valley</div>
+        </div>
     </div>
     <div id="setup-container">
         <div class="setup-content">
@@ -17,7 +20,9 @@
             <input type="number" id="monitor-height" placeholder="H">
             </div>
            <button onclick="initializeGrid()">
-               <img src="assets/grid-go_white.svg" alt="Grid Icon" style="width: 20px; height: 20px; vertical-align: middle;"></button>
+               <img src="assets/grid-go_white.svg" alt="Grid Icon">
+               Initialize Grid
+           </button>
             
             <div class="divider"></div>
             <div class="h1-header">Presets</div>
@@ -77,7 +82,7 @@
         </div>
         <div class="input-flex">
             <input type="number" id="width-input" value="10" min="1" max="66" placeholder="W (in)">
-            <img src="assets/close.svg" alt="X" style="width: 20px; height: 20px; vertical-align: middle;">
+            <img src="assets/close.svg" alt="X">
             <input type="number" id="height-input" value="10" min="1" max="37" placeholder="H (in)">
         </div>
         <!-- Comment out the Launch Frame button -->
@@ -975,9 +980,9 @@
         });
 
         // Add this in the script section after the other event listeners
-        document.getElementById('border-toggle').addEventListener('click', () => {
-            toggleBorder();
-        });
+        // document.getElementById('border-toggle').addEventListener('click', () => {
+        //     toggleBorder();
+        // });
 
         // Add this near the top of your script section
         // Function to handle incoming Figma frames
