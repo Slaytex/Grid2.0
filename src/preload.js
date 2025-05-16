@@ -47,5 +47,15 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.on('border-state-updated-from-main', (event, { isEnabled, thicknessInches }) => {
             callback(isEnabled, thicknessInches);
         });
+    },
+    
+    // IPC for frame controls visibility updates
+    updateFrameControlsState: (isVisible) => {
+        ipcRenderer.send('update-frame-controls-state', { isVisible });
+    },
+    onUpdateFrameControlsState: (callback) => {
+        ipcRenderer.on('frame-controls-state-updated', (event, { isVisible }) => {
+            callback(isVisible);
+        });
     }
 }) 

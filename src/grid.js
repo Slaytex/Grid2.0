@@ -8,6 +8,7 @@ let borderEnabled = false;
 let frameData = null;
 let zIndexCounter = 100; // Starting z-index for windows
 let currentGlobalBorderThickness = 0.25; // Default, will be updated via IPC
+let frameControlsVisible = false; // Controls visibility state
 
 // Remove CM to inches conversion factor
 // const CM_TO_INCHES = 0.393701; // 1 cm = 0.393701 inches
@@ -510,6 +511,8 @@ function createFigmaFrame(frame) {
     const dragHandle = document.createElement('div');
     dragHandle.className = 'window-drag-handle';
     dragHandle.innerHTML = '<img src="./assets/arrows.svg" alt="Move">';
+    // Set cursor explicitly
+    dragHandle.style.cursor = 'move';
     windowEl.appendChild(dragHandle);
 
     const closeButton = document.createElement('button');
@@ -519,64 +522,93 @@ function createFigmaFrame(frame) {
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle se';
     windowEl.appendChild(resizeHandle);
-
+    
     // Add size indicator
     const sizeIndicator = document.createElement('div');
     sizeIndicator.className = 'size-indicator';
     document.body.appendChild(sizeIndicator);
     
-    // Make window draggable
+    // Make window draggable using the same pattern as in createImageWindow
     let isDragging = false;
-    let currentX;
-    let currentY;
-    let initialX;
-    let initialY;
+    let initialX, initialY;
+    
+    // Define handler functions
+    const handleMouseMove = (e) => {
+        if (isDragging) {
+            const currentX = e.clientX - initialX;
+            const currentY = e.clientY - initialY;
+            windowEl.style.left = `${currentX}px`;
+            windowEl.style.top = `${currentY}px`;
+        }
+    };
+    
+    const handleMouseUp = () => {
+        if (isDragging) {
+            isDragging = false;
+            // Reset cursor when done dragging
+            document.body.style.cursor = '';
+            // Remove event listeners when not dragging
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+    };
     
     dragHandle.addEventListener('mousedown', (e) => {
+        // Set cursor during drag operation - this is critical for showing the crosshair
+        document.body.style.cursor = 'move';
+        
         bringToFront(windowEl); // Bring window to front when starting to drag
         isDragging = true;
         initialX = e.clientX - windowEl.offsetLeft;
         initialY = e.clientY - windowEl.offsetTop;
+        
+        // Add event listeners only when starting to drag
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        
+        e.preventDefault();
     });
 
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-            windowEl.style.left = `${currentX}px`;
-            windowEl.style.top = `${currentY}px`;
-        }
-    });
-
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-
-    // Make window resizable
+    // Make window resizable using the same pattern
     let isResizing = false;
-    let initialWidth = 0;
-    let initialHeight = 0;
+    let initialWidth, initialHeight, initialResizeX, initialResizeY;
     
-    resizeHandle.addEventListener('mousedown', (e) => {
-        bringToFront(windowEl); // Bring window to front when starting to resize
-        isResizing = true;
-        initialWidth = parseInt(windowEl.style.width);
-        initialHeight = parseInt(windowEl.style.height);
-        initialX = e.clientX;
-        initialY = e.clientY;
-    });
-
-    document.addEventListener('mousemove', (e) => {
+    const handleResizeMove = (e) => {
         if (isResizing) {
-            const width = initialWidth + (e.clientX - initialX);
-            const height = initialHeight + (e.clientY - initialY);
+            const width = initialWidth + (e.clientX - initialResizeX);
+            const height = initialHeight + (e.clientY - initialResizeY);
             windowEl.style.width = `${width}px`;
             windowEl.style.height = `${height}px`;
         }
-    });
-
-    document.addEventListener('mouseup', () => {
-        isResizing = false;
+    };
+    
+    const handleResizeUp = () => {
+        if (isResizing) {
+            isResizing = false;
+            // Reset cursor when done resizing
+            document.body.style.cursor = '';
+            // Remove event listeners when not resizing
+            document.removeEventListener('mousemove', handleResizeMove);
+            document.removeEventListener('mouseup', handleResizeUp);
+        }
+    };
+    
+    resizeHandle.addEventListener('mousedown', (e) => {
+        // Set cursor during resize operation
+        document.body.style.cursor = 'nwse-resize';
+        
+        bringToFront(windowEl);
+        isResizing = true;
+        initialWidth = parseInt(windowEl.style.width);
+        initialHeight = parseInt(windowEl.style.height);
+        initialResizeX = e.clientX;
+        initialResizeY = e.clientY;
+        
+        // Add event listeners only when starting to resize
+        document.addEventListener('mousemove', handleResizeMove);
+        document.addEventListener('mouseup', handleResizeUp);
+        
+        e.preventDefault();
     });
 
     // Close button functionality
@@ -601,6 +633,11 @@ function createFigmaFrame(frame) {
         windowEl.classList.add('border-enabled');
     } else {
         windowEl.style.borderRadius = '0px'; // Explicitly set border radius to 0 when border is disabled
+    }
+    
+    // Apply class based on controls visibility
+    if (frameControlsVisible) {
+        windowEl.classList.add('window-controls-visible');
     }
     
     container.appendChild(windowEl);
@@ -655,10 +692,12 @@ function createImageWindow(config) {
     // Add window controls as direct siblings at the same level as the image
     windowEl.appendChild(img);
     
-    // Add drag handle
+    // Add drag handle with explicit cursor style
     const dragHandle = document.createElement('div');
     dragHandle.className = 'window-drag-handle';
     dragHandle.innerHTML = '<img src="./assets/arrows.svg" alt="Move">';
+    // Set cursor explicitly
+    dragHandle.style.cursor = 'move';
     windowEl.appendChild(dragHandle);
     
     // Add close button
@@ -677,65 +716,102 @@ function createImageWindow(config) {
     // Add resize handle
     const resizeHandle = document.createElement('div');
     resizeHandle.className = 'resize-handle se';
+    // Set initial visibility based on frameControlsVisible state
+    resizeHandle.style.display = frameControlsVisible ? 'block' : 'none';
     windowEl.appendChild(resizeHandle);
     
-    // Make draggable
+    // Make draggable - FIX: Use local variables to store state for this specific window
     let isDragging = false;
-    let currentX, currentY, initialX, initialY;
+    let initialX, initialY;
+    
+    // FIX: Keep event handlers specific to this window
+    const handleMouseMove = (e) => {
+        if (isDragging) {
+            const currentX = e.clientX - initialX;
+            const currentY = e.clientY - initialY;
+            windowEl.style.left = `${currentX}px`;
+            windowEl.style.top = `${currentY}px`;
+        }
+    };
+    
+    const handleMouseUp = () => {
+        if (isDragging) {
+            isDragging = false;
+            // Reset cursor when done dragging
+            document.body.style.cursor = '';
+            // FIX: Remove event listeners when not dragging to prevent conflicts
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+    };
     
     dragHandle.addEventListener('mousedown', (e) => {
+        // Set cursor during drag operation - this is critical for showing the crosshair
+        document.body.style.cursor = 'move';
+        
         bringToFront(windowEl);
         isDragging = true;
         initialX = e.clientX - windowEl.offsetLeft;
         initialY = e.clientY - windowEl.offsetTop;
+        
+        // FIX: Add event listeners only when starting to drag
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        
         e.preventDefault();
     });
     
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            currentX = e.clientX - initialX;
-            currentY = e.clientY - initialY;
-            windowEl.style.left = `${currentX}px`;
-            windowEl.style.top = `${currentY}px`;
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-    
-    // Make window resizable
+    // Make window resizable - FIX: Similar fixes for resize functionality
     let isResizing = false;
-    let initialWidth = 0;
-    let initialHeight = 0;
+    let initialWidth, initialHeight, initialResizeX, initialResizeY;
+    
+    const handleResizeMove = (e) => {
+        if (isResizing) {
+            const width = initialWidth + (e.clientX - initialResizeX);
+            const height = initialHeight + (e.clientY - initialResizeY);
+            windowEl.style.width = `${width}px`;
+            windowEl.style.height = `${height}px`;
+        }
+    };
+    
+    const handleResizeUp = () => {
+        if (isResizing) {
+            isResizing = false;
+            // Reset cursor when done resizing
+            document.body.style.cursor = '';
+            // FIX: Remove resize event listeners when not resizing
+            document.removeEventListener('mousemove', handleResizeMove);
+            document.removeEventListener('mouseup', handleResizeUp);
+        }
+    };
     
     resizeHandle.addEventListener('mousedown', (e) => {
+        // Set cursor during resize operation
+        document.body.style.cursor = 'nwse-resize';
+        
         bringToFront(windowEl);
         isResizing = true;
         initialWidth = parseInt(windowEl.style.width);
         initialHeight = parseInt(windowEl.style.height);
-        initialX = e.clientX;
-        initialY = e.clientY;
+        initialResizeX = e.clientX;
+        initialResizeY = e.clientY;
+        
+        // FIX: Add resize event listeners only when starting to resize
+        document.addEventListener('mousemove', handleResizeMove);
+        document.addEventListener('mouseup', handleResizeUp);
+        
         e.preventDefault();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (isResizing) {
-            const width = initialWidth + (e.clientX - initialX);
-            const height = initialHeight + (e.clientY - initialY);
-            windowEl.style.width = `${width}px`;
-            windowEl.style.height = `${height}px`;
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        isResizing = false;
     });
     
     // Bring to front when clicked
     windowEl.addEventListener('mousedown', () => {
         bringToFront(windowEl);
     });
+    
+    // Apply class based on controls visibility
+    if (frameControlsVisible) {
+        windowEl.classList.add('window-controls-visible');
+    }
     
     // Add to DOM
     document.getElementById('container').appendChild(windowEl);
@@ -753,4 +829,31 @@ function updateGridLines() {
     
     // Simply call the animation function rather than drawing a separate grid
     animateGrid();
+}
+
+// Add a function to handle frame controls visibility
+function updateFrameControlsVisibility(isVisible) {
+    console.log(`[Grid.js] Setting frame controls visibility: ${isVisible}`);
+    frameControlsVisible = isVisible;
+    
+    // Update all existing windows
+    const windows = document.querySelectorAll('.figma-window, .image-window');
+    windows.forEach(windowEl => {
+        // Add or remove class for styling - use the correct class name
+        if (isVisible) {
+            windowEl.classList.add('window-controls-visible');
+        } else {
+            windowEl.classList.remove('window-controls-visible');
+        }
+    });
+}
+
+// Listen for frame controls visibility updates from main process
+if (window.electron && typeof window.electron.onUpdateFrameControlsState === 'function') {
+    window.electron.onUpdateFrameControlsState((isVisible) => {
+        console.log(`[Grid.js] Received frame controls state update: ${isVisible}`);
+        updateFrameControlsVisibility(isVisible);
+    });
+} else {
+    console.warn("[Grid.js] window.electron.onUpdateFrameControlsState is not available.");
 } 

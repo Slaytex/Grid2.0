@@ -313,11 +313,15 @@ if (!gotTheLock) {
   // Listen for border state updates from renderer and broadcast to all windows
   ipcMain.on('update-border-state', (event, { isEnabled, thicknessInches }) => {
     console.log(`[Main Process] Received update-border-state. Enabled: ${isEnabled}, Thickness: ${thicknessInches}`);
-    // Broadcast this to all renderer processes (e.g., if you have multiple windows in the future or for consistency)
-    if (mainWindow && mainWindow.webContents) {
-        mainWindow.webContents.send('border-state-updated-from-main', { isEnabled, thicknessInches });
-    }
-    // Potentially iterate over all BrowserWindows if you have more than one that needs this update.
+    // Forward to grid-gen page
+    mainWindow.webContents.send('border-state-updated-from-main', { isEnabled, thicknessInches });
+  });
+
+  // Add new handler for frame controls visibility
+  ipcMain.on('update-frame-controls-state', (event, { isVisible }) => {
+    console.log(`[Main Process] Received update-frame-controls-state. Visible: ${isVisible}`);
+    // Forward to grid-gen page
+    mainWindow.webContents.send('frame-controls-state-updated', { isVisible });
   });
 }
 
