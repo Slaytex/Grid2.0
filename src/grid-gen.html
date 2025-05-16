@@ -290,6 +290,10 @@
           // No need to update button text anymore, the switch itself is the visual indicator
           // toggleControlsText.textContent = windowControlsVisible ? 'Controls ON' : 'Controls OFF'; // Optional: change text if desired
           
+          // Update windows through IPC to ensure consistency across all components
+          window.electron.updateFrameControlsState(windowControlsVisible);
+          
+          // Also update current windows for immediate visual feedback
           document.querySelectorAll('.figma-window, .image-window').forEach(windowEl => {
             if (windowControlsVisible) {
               windowEl.classList.add('window-controls-visible');
@@ -839,6 +843,7 @@
             const dragHandle = document.createElement('div');
             dragHandle.className = 'window-drag-handle';
             dragHandle.innerHTML = '<img src="./assets/arrows.svg" alt="Move">';
+            dragHandle.style.cursor = 'move'; // Ensure cursor is set
             windowEl.appendChild(dragHandle);
 
             // Add close button
@@ -891,14 +896,61 @@
             sizeIndicator.className = 'size-indicator';
             document.body.appendChild(sizeIndicator);
 
-            // Add resize functionality
+            // IMPORTANT: Use the SAME drag logic as createWindow function
+            // Make window draggable - same pattern as in createWindow
+            let isDragging = false;
+            let currentX;
+            let currentY;
+            let initialX;
+            let initialY;
+            
+            dragHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent any default behavior
+                bringToFront(windowEl);
+                isDragging = true;
+                initialX = e.clientX - windowEl.offsetLeft;
+                initialY = e.clientY - windowEl.offsetTop;
+                
+                // Change cursor for entire document during drag
+                document.body.style.cursor = 'move';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    windowEl.style.left = `${currentX}px`;
+                    windowEl.style.top = `${currentY}px`;
+                }
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                // Reset cursor
+                document.body.style.cursor = '';
+            });
+            
+            // Make window resizable
             let isResizing = false;
-            let initialMouseX = 0;
-            let initialMouseY = 0;
             let initialWidth = 0;
             let initialHeight = 0;
+            let initialMouseX = 0;
+            let initialMouseY = 0;
             
-            function handleMouseMove(e) {
+            resizeHandle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                bringToFront(windowEl);
+                isResizing = true;
+                initialWidth = parseInt(windowEl.style.width);
+                initialHeight = parseInt(windowEl.style.height);
+                initialMouseX = e.clientX;
+                initialMouseY = e.clientY;
+                
+                // Set cursor for resize
+                document.body.style.cursor = 'nwse-resize';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
                 if (isResizing) {
                     const width = initialWidth + (e.clientX - initialMouseX);
                     const height = initialHeight + (e.clientY - initialMouseY);
@@ -913,47 +965,89 @@
                     sizeIndicator.style.left = `${e.clientX + 20}px`;
                     sizeIndicator.style.top = `${e.clientY + 20}px`;
                 }
-            }
+            });
             
-            function handleMouseUp() {
+            document.addEventListener('mouseup', () => {
                 if (isResizing) {
                     isResizing = false;
-                    document.removeEventListener('mousemove', handleMouseMove);
-                    document.removeEventListener('mouseup', handleMouseUp);
                     sizeIndicator.style.display = 'none';
+                    // Reset cursor
+                    document.body.style.cursor = '';
+                }
+            });
+
+            // Bring window to front when clicked
+            windowEl.addEventListener('mousedown', () => {
+                bringToFront(windowEl);
+            });
+
+            // Add click-to-place for drag handle - SAME as in createWindow function
+            let placementMode = false;
+            dragHandle.addEventListener('click', (e) => {
+                // Toggle placement mode ONLY if not currently dragging
+                if (!isDragging) {
+                    e.stopPropagation(); // Prevent triggering window's mousedown
+                    placementMode = !placementMode;
+                    dragHandle.style.background = placementMode ? 
+                        'rgba(0, 255, 0, 0.5)' : 'rgba(255, 165, 0, 0.7)'; // Green when active
+                    
+                    const cursor = document.querySelector('.grid-cursor');
+                    if (placementMode) {
+                        cursor.style.display = 'block';
+                        document.addEventListener('mousemove', updateGridCursor);
+                        // Add listener to container for placement click
+                        document.getElementById('container').addEventListener('click', placeWindow, { once: true }); // Use once to auto-remove listener
+                    } else {
+                        cursor.style.display = 'none';
+                        document.removeEventListener('mousemove', updateGridCursor);
+                        // Explicitly remove listener if mode is toggled off
+                        document.getElementById('container').removeEventListener('click', placeWindow);
+                    }
+                }
+            });
+            
+            function placeWindow(e) {
+                if (placementMode && e.target === document.getElementById('container')) {
+                    const absoluteX = e.clientX;
+                    const absoluteY = e.clientY;
+                    
+                    // Set target position to the click coordinates directly (aligns top-left corner)
+                    const targetX = absoluteX;
+                    const targetY = absoluteY;
+                    
+                    windowEl.style.transition = 'left 0.3s ease-out, top 0.3s ease-out'; // Add smooth transition
+                    windowEl.style.left = `${targetX}px`;
+                    windowEl.style.top = `${targetY}px`;
+                    
+                    // Remove transition after animation completes
+                    setTimeout(() => {
+                        windowEl.style.transition = '';
+                    }, 300); // Match the transition duration
+                    
+                    // Exit placement mode
+                    placementMode = false;
+                    dragHandle.style.background = 'rgba(255, 165, 0, 0.7)'; // Reset handle color
+                    const cursor = document.querySelector('.grid-cursor');
+                    cursor.style.display = 'none';
+                    document.removeEventListener('mousemove', updateGridCursor);
+                } else if (placementMode) {
+                    // If clicked on something else while in placement mode, just exit placement mode
+                    placementMode = false;
+                    dragHandle.style.background = 'rgba(255, 165, 0, 0.7)';
+                    const cursor = document.querySelector('.grid-cursor');
+                    cursor.style.display = 'none';
+                    document.removeEventListener('mousemove', updateGridCursor);
+                    // Re-add listener if needed, or handle appropriately
+                    document.getElementById('container').removeEventListener('click', placeWindow);
                 }
             }
-
-            resizeHandle.addEventListener('mousedown', (e) => {
-                isResizing = true;
-                initialMouseX = e.clientX;
-                initialMouseY = e.clientY;
-                initialWidth = parseInt(windowEl.style.width);
-                initialHeight = parseInt(windowEl.style.height);
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseup', handleMouseUp);
-                e.preventDefault();
-            });
-
-            // Clean up event listeners when window is closed
-            closeButton.addEventListener('click', () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-                sizeIndicator.remove();
-                // Revoke the object URL when closing
-                if (img.src.startsWith('blob:')) {
-                    URL.revokeObjectURL(img.src);
-                }
-                windowEl.remove();
-            });
 
             // Apply controls visibility class if needed
             if (windowControlsVisible) {
-              windowEl.classList.add('window-controls-visible');
+                windowEl.classList.add('window-controls-visible');
             }
             
             container.appendChild(windowEl);
-            updateWindowList();
             return windowEl;
         }
 

@@ -738,6 +738,21 @@ button:hover {
   pointer-events: auto !important;
 }
 
+/* IMPORTANT FIX: Ensure controls never respond to hover when controls-visible class is missing */
+.figma-window:not(.window-controls-visible) .window-drag-handle,
+.figma-window:not(.window-controls-visible) .window-close-button,
+.figma-window:not(.window-controls-visible) .window-save-button, 
+.figma-window:not(.window-controls-visible) .window-refresh-button,
+.figma-window:not(.window-controls-visible) .resize-handle,
+.image-window:not(.window-controls-visible) .window-drag-handle,
+.image-window:not(.window-controls-visible) .window-close-button,
+.image-window:not(.window-controls-visible) .window-refresh-button,
+.image-window:not(.window-controls-visible) .resize-handle {
+  opacity: 0 !important;
+  pointer-events: none !important; /* Prevent all mouse interaction */
+  cursor: default !important;
+}
+
 /* Button hover effects (keep these for when controls are visible) */
 .window-drag-handle:hover,
 .window-close-button:hover,
