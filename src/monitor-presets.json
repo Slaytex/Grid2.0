@@ -47,6 +47,14 @@
             "pxWidth": 3840,
             "pxHeight": 2160,
             "ppi": 140
+        },
+        {
+            "name": "Pangyo Dell 31.5\"",
+            "width": 27.5,
+            "height": 15.4,
+            "pxWidth": 3840,
+            "pxHeight": 2160,
+            "ppi": 140
         }
     ]
 } 
