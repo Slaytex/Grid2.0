@@ -7,12 +7,21 @@
   "scripts": {
     "start": "electron .",
     "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "pack:win": "electron-builder --win --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win --publish=never",
+    "dist:all": "electron-builder --mac --win --linux --publish=never"
   },
   "build": {
     "appId": "com.chrisjacobs.grid2",
     "productName": "Grid 2.0",
+    "directories": {
+      "buildResources": "build"
+    },
     "mac": {
       "category": "public.app-category.utilities",
       "icon": "build/icon.icns",
@@ -22,6 +31,53 @@
       ],
       "darkModeSupport": true,
       "hardenedRuntime": true
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "publisherName": "Chris Jacobs",
+      "verifyUpdateCodeSignature": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Grid 2.0"
+    },
+    "linux": {
+      "icon": "icons_export",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Utility",
+      "description": "Grid 2.0 - The Enhanced Grid Generator"
     },
     "dmg": {
       "contents": [
@@ -44,7 +100,8 @@
     "files": [
       "src/**/*",
       "package.json",
-      "build/icon.icns"
+      "build/icon.icns",
+      "build/icon.ico"
     ]
   },
   "devDependencies": {

@@ -236,7 +236,10 @@ if (!gotTheLock) {
       
       // Create the application window
       createWindow()
-      createDockMenu()
+      // Only create dock menu on macOS
+      if (process.platform === 'darwin') {
+        createDockMenu()
+      }
       createApplicationMenu()
       
     } catch (error) {
@@ -278,6 +281,7 @@ if (!gotTheLock) {
   })
 
   app.on('window-all-closed', () => {
+    // On Windows and Linux, quit when all windows are closed
     if (process.platform !== 'darwin') {
       app.quit()
     }
@@ -326,8 +330,11 @@ if (!gotTheLock) {
 }
 
 function createApplicationMenu() {
+  const isMac = process.platform === 'darwin'
+  
   const template = [
-    {
+    // macOS app menu
+    ...(isMac ? [{
       label: 'Grid Generator',
       submenu: [
         { role: 'about' },
@@ -340,12 +347,12 @@ function createApplicationMenu() {
         { type: 'separator' },
         { role: 'quit' }
       ]
-    },
+    }] : []),
     {
-      label: 'More',  // Changed from 'File' to 'More'
+      label: 'File',
       submenu: [
         {
-          label: 'How to use Grid',  // Added new help menu item
+          label: 'How to use Grid',
           click() {
             require('electron').shell.openExternal('https://css-playground-f31b22.webflow.io/');
           }
@@ -391,9 +398,53 @@ function createApplicationMenu() {
           }
         },
         { type: 'separator' },
+        ...(isMac ? [] : [
+          {
+            label: 'Toggle Developer Tools',
+            accelerator: 'CmdOrCtrl+I',
+            click() {
+              if (mainWindow) {
+                mainWindow.webContents.toggleDevTools();
+              }
+            }
+          },
+          { type: 'separator' }
+        ]),
+        {
+          label: isMac ? 'Minimize Window' : 'Minimize',
+          accelerator: isMac ? undefined : 'CmdOrCtrl+M',
+          click() {
+            if (mainWindow) {
+              if (isMac) {
+                mainWindow.setFullScreen(false);
+                setTimeout(() => {
+                  mainWindow.minimize();
+                }, 100);
+              } else {
+                mainWindow.minimize();
+              }
+            }
+          }
+        },
+        ...(isMac ? [] : [
+          { type: 'separator' },
+          {
+            label: 'Exit',
+            accelerator: 'Alt+F4',
+            click() {
+              app.quit();
+            }
+          }
+        ])
+      ]
+    },
+    // Add View menu for non-Mac platforms
+    ...(!isMac ? [{
+      label: 'View',
+      submenu: [
         {
           label: 'Toggle Developer Tools',
-          accelerator: 'CmdOrCtrl+I',
+          accelerator: 'F12',
           click() {
             if (mainWindow) {
               mainWindow.webContents.toggleDevTools();
@@ -401,18 +452,33 @@ function createApplicationMenu() {
           }
         },
         { type: 'separator' },
-        {
-          label: 'Minimize Window',  // Changed from 'Close' to 'Minimize Window'
-          click() {
-            if (mainWindow) {
-              mainWindow.setFullScreen(false);  // First exit fullscreen
-              // Give it a moment to exit fullscreen before minimizing
-              setTimeout(() => {
-                mainWindow.minimize();
-              }, 100);
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    }] : []),
+    // Help menu
+    {
+      label: 'Help',
+      submenu: [
+        ...(isMac ? [] : [
+          {
+            label: 'About Grid 2.0',
+            click() {
+              dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'About Grid 2.0',
+                message: 'Grid 2.0',
+                detail: 'The Enhanced Grid Generator\nVersion 2.0.0\nBy Chris Jacobs'
+              });
             }
           }
-        }
+        ])
       ]
     }
   ]
@@ -459,11 +525,17 @@ function createWindow () {
   // Handle window close
   mainWindow.on('close', (event) => {
     if (mainWindow) {
-      event.preventDefault()
-      mainWindow.setFullScreen(false)  // Exit fullscreen first
-      setTimeout(() => {               // Give it a moment to exit fullscreen
-        mainWindow.hide()
-      }, 100)
+      if (process.platform === 'darwin') {
+        // On macOS, hide the window instead of quitting
+        event.preventDefault()
+        mainWindow.setFullScreen(false)  // Exit fullscreen first
+        setTimeout(() => {               // Give it a moment to exit fullscreen
+          mainWindow.hide()
+        }, 100)
+      } else {
+        // On Windows/Linux, allow the window to close normally which will quit the app
+        // No need to prevent default behavior
+      }
     }
   })
 
@@ -477,8 +549,12 @@ function createWindow () {
   return mainWindow
 }
 
-// Create dock menu
+// Create dock menu (macOS only)
 function createDockMenu() {
+  if (process.platform !== 'darwin') {
+    return // Dock menu is only available on macOS
+  }
+  
   const dockMenu = Menu.buildFromTemplate([
     {
       label: 'New Window',

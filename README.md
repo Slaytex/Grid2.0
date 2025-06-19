@@ -13,7 +13,7 @@ Grid 2.0 is a powerful desktop application that works in conjunction with a Figm
 - Node.js (v16 or higher)
 - npm (Node Package Manager)
 - Figma Desktop App
-- macOS (for running the desktop app)
+- Operating System: macOS, Windows 10/11, or Linux
 - TypeScript (for development)
 
 ## Installation
@@ -52,11 +52,30 @@ npm start
 ```
 
 2. Build the application for distribution:
+
+**For current platform:**
 ```bash
 npm run dist
 ```
 
+**For specific platforms:**
+```bash
+# Windows
+npm run dist:win
+
+# macOS
+npm run build:mac
+
+# All platforms
+npm run dist:all
+```
+
 The built application will be available in the `dist` directory.
+
+**Platform-specific notes:**
+- **Windows**: See [WINDOWS_BUILD.md](WINDOWS_BUILD.md) for detailed Windows build instructions
+- **macOS**: DMG and ZIP files will be created
+- **Linux**: AppImage and other formats will be created
 
 ### Figma Plugin Installation
 
@@ -136,9 +155,20 @@ To modify the plugin, edit files in the `figma_plugin` directory.
 npm run dist
 ```
 
-This will create:
+This will create platform-specific distributables:
+
+**macOS:**
 - A DMG installer for macOS
 - A ZIP archive of the application
+
+**Windows:**
+- NSIS installer (Grid 2.0 Setup.exe)
+- Portable executable (Grid 2.0 Portable.exe)
+- See [WINDOWS_BUILD.md](WINDOWS_BUILD.md) for detailed Windows build information
+
+**Linux:**
+- AppImage file
+- Additional Linux package formats
 
 ### Figma Plugin
 
