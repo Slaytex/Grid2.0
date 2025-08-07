@@ -211,6 +211,12 @@
     cursor: wait;
   }
 
+  /* Highlight state for SEND LIVE when a #live frame is selected */
+  .send-button.live-active {
+    border: 1px solid #77c2ea;
+    letter-spacing: 4px;
+  }
+
   .send-button.success {
     background: #4CAF50;
     color: white;
@@ -561,7 +567,10 @@
 </div>
 
 <div class="button-container">
-  <button id="sendButton" class="send-button">
+  <button id="nameFrameButton" class="send-button">NAME FRAME</button>
+  <button id="sendLiveButton" class="send-button">SEND LIVE</button>
+  <button id="resizeButton" class="send-button">RESIZE GRID FRAME</button>
+  <button id="castButton" class="send-button">
     SEND TO GRID
   </button>
 </div>
@@ -767,14 +776,14 @@ function showLoading(message) {
 }
 
 // Add click handler for send button
-document.getElementById('sendButton').addEventListener('click', () => {
+document.getElementById('castButton').addEventListener('click', () => {
   console.log('Button clicked!'); // Debug log
   addDebug('Button clicked!'); // Debug log in UI
   
   // First check if WebSocket is connected
   if (!socket || socket.readyState !== WebSocket.OPEN) {
     // WebSocket not connected - show error in RED
-    const button = document.getElementById('sendButton');
+    const button = document.getElementById('castButton');
     button.textContent = 'NOT CONNECTED';
     button.classList.add('error');
     button.classList.add('flash-error');
@@ -800,7 +809,7 @@ document.getElementById('sendButton').addEventListener('click', () => {
   if (selectedFrames.length > 0) {
     try {
       // Update button state
-      const button = document.getElementById('sendButton');
+      const button = document.getElementById('castButton');
       button.textContent = 'CONNECTING...';
       button.classList.add('sending');
       button.disabled = true;
@@ -837,7 +846,7 @@ document.getElementById('sendButton').addEventListener('click', () => {
     }
   } else {
     // No frames selected - show ORANGE warning
-    const button = document.getElementById('sendButton');
+    const button = document.getElementById('castButton');
     
     // Store original text and background to restore later
     const originalText = button.textContent;
@@ -855,6 +864,32 @@ document.getElementById('sendButton').addEventListener('click', () => {
       button.classList.remove('flash-warning');
     }, 1600);
   }
+});
+
+// Add click handler for resize button
+document.getElementById('resizeButton').addEventListener('click', () => {
+    parent.postMessage({ pluginMessage: { type: 'resize-frame' } }, '*');
+});
+
+// Add click handler for SEND LIVE button
+document.getElementById('sendLiveButton').addEventListener('click', () => {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    const btn = document.getElementById('sendLiveButton');
+    btn.textContent = 'NOT CONNECTED';
+    btn.classList.add('error', 'flash-error');
+    setTimeout(() => {
+      btn.textContent = 'SEND LIVE';
+      btn.classList.remove('error', 'flash-error');
+    }, 1600);
+    addDebug('WebSocket not connected.');
+    return;
+  }
+  parent.postMessage({ pluginMessage: { type: 'send-live' } }, '*');
+});
+
+// Add click handler for NAME FRAME (Add Size) button
+document.getElementById('nameFrameButton').addEventListener('click', () => {
+  parent.postMessage({ pluginMessage: { type: 'add-size' } }, '*');
 });
 
 // Listen for messages from the plugin
@@ -895,18 +930,18 @@ window.onmessage = async (event) => {
     addDebug(`Found ${message.frames.length} matching frames in selection`);
   }
   else if (message.type === 'export-started') {
-    const button = document.getElementById('sendButton');
+    const button = document.getElementById('castButton');
     button.textContent = 'Creating PNGs...';
     addDebug(`Starting export of ${message.count} frames...`);
   }
   else if (message.type === 'export-progress') {
-    const button = document.getElementById('sendButton');
+    const button = document.getElementById('castButton');
     button.textContent = `Creating PNGs (${message.current}/${message.total})`;
     button.classList.add('sending'); // Make sure the sending class is applied
     addDebug(`Exported ${message.current} of ${message.total}: ${message.frameName}`);
   }
   else if (message.type === 'send-to-electron' && message.frames) {
-    const button = document.getElementById('sendButton');
+    const button = document.getElementById('castButton');
     
     if (socket && socket.readyState === WebSocket.OPEN) {
       try {
@@ -1000,6 +1035,32 @@ window.onmessage = async (event) => {
         button.classList.remove('error', 'flash-error');
         button.disabled = false;
       }, 2000);
+    }
+  } else if (message.type === 'send-resize-to-electron' && message.frame) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({
+            type: 'resize-frame',
+            frame: message.frame
+        }));
+        addDebug(`Sent resize command for frame "${message.frame.name}"`);
+    } else {
+        addDebug('WebSocket not connected - cannot send resize command');
+    }
+  }
+  else if (message.type === 'send-live-to-electron' && message.frame) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: 'live-frame', frame: message.frame }));
+      addDebug(`Sent live frame metadata for "${message.frame.name}"`);
+    } else {
+      addDebug('WebSocket not connected - cannot send live frame');
+    }
+  }
+  else if (message.type === 'live-selection') {
+    const btn = document.getElementById('sendLiveButton');
+    if (message.liveSelected) {
+      btn.classList.add('live-active');
+    } else {
+      btn.classList.remove('live-active');
     }
   }
   else if (message.type === 'get-screen-info') {
