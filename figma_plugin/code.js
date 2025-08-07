@@ -141,6 +141,15 @@ figma.showUI(__html__, { width: 350, height: 500 });
 figma.ui.postMessage({ type: 'init-ui' });
 // Request screen info when plugin loads
 figma.ui.postMessage({ type: 'get-screen-info' });
+// Notify UI when selection changes so it can hint about live frames
+figma.on('selectionchange', () => {
+    const sel = figma.currentPage.selection;
+    let liveSelected = false;
+    if (sel.length === 1 && sel[0].type === 'FRAME') {
+        liveSelected = /^.+#live$/i.test(sel[0].name);
+    }
+    figma.ui.postMessage({ type: 'live-selection', liveSelected });
+});
 // Handle messages from UI
 figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
     if (msg.type === 'open-url' && msg.url) {
@@ -223,6 +232,92 @@ figma.ui.onmessage = (msg) => __awaiter(void 0, void 0, void 0, function* () {
         }
         // Send the frames with their PNG bytes to UI for WebSocket transmission
         figma.ui.postMessage({ type: 'send-to-electron', frames });
+    }
+    else if (msg.type === 'resize-frame') {
+        const selection = figma.currentPage.selection;
+        if (selection.length !== 1 || selection[0].type !== 'FRAME') {
+            figma.notify('Please select a single frame to resize.');
+            return;
+        }
+        const frameNode = selection[0];
+        const liveMatch = frameNode.name.match(/^(.+?)#live$/i);
+        const parsedName = parseFrameName(frameNode.name);
+        const baseName = liveMatch ? liveMatch[1].trim() : (parsedName ? parsedName.name : null);
+        if (!baseName) {
+            figma.notify('Name your frame like: name#live or run Add Size first.');
+            return;
+        }
+        // Convert pixels to inches using 160 dp baseline
+        const widthInches = frameNode.width / 160;
+        const heightInches = frameNode.height / 160;
+        figma.ui.postMessage({
+            type: 'send-resize-to-electron',
+            frame: {
+                name: baseName, // Identify active window by base name
+                widthInches,
+                heightInches,
+            }
+        });
+        figma.notify(`Resizing "${baseName}" to ${widthInches.toFixed(1)}" x ${heightInches.toFixed(1)}" (160dp)`);
+    }
+    else if (msg.type === 'send-live') {
+        const selection = figma.currentPage.selection;
+        if (selection.length !== 1 || selection[0].type !== 'FRAME') {
+            figma.notify('Please select a single frame to send live.');
+            return;
+        }
+        const frameNode = selection[0];
+        const liveMatch = frameNode.name.match(/^(.+?)#live$/i);
+        const parsedName = parseFrameName(frameNode.name);
+        const baseName = liveMatch ? liveMatch[1].trim() : (parsedName ? parsedName.name : null);
+        if (!baseName) {
+            figma.notify('Name your frame like: name#live or run Add Size first.');
+            return;
+        }
+        // For live flows, compute size from pixels using 160 dp baseline
+        const widthInches = frameNode.width / 160;
+        const heightInches = frameNode.height / 160;
+        figma.ui.postMessage({
+            type: 'send-live-to-electron',
+            frame: {
+                name: baseName,
+                widthInches,
+                heightInches
+            }
+        });
+        figma.notify(`Sent live frame "${baseName}" (${widthInches.toFixed(1)}"×${heightInches.toFixed(1)}") (160dp)`);
+    }
+    else if (msg.type === 'add-size') {
+        const selection = figma.currentPage.selection;
+        if (selection.length === 0) {
+            figma.notify('Select frames to add size.');
+            return;
+        }
+        const frames = selection.filter(n => n.type === 'FRAME');
+        if (frames.length === 0) {
+            figma.notify('No frames selected.');
+            return;
+        }
+        const getBase = (name) => name.split('#')[0].trim();
+        const counts = new Map();
+        frames.forEach(f => {
+            const base = getBase(f.name);
+            counts.set(base, (counts.get(base) || 0) + 1);
+        });
+        const indexPerBase = new Map();
+        for (const f of frames) {
+            const base = getBase(f.name);
+            const numbered = (counts.get(base) || 0) > 1;
+            const idx = (indexPerBase.get(base) || 0) + 1;
+            indexPerBase.set(base, idx);
+            const pad2 = (n) => (n < 10 ? `0${n}` : String(n));
+            const suffix = numbered ? `-${pad2(idx)}` : '';
+            const unique = `${base}${suffix}`;
+            const wIn = Math.round((f.width / 160) * 10) / 10;
+            const hIn = Math.round((f.height / 160) * 10) / 10;
+            f.name = `${unique}#${wIn}x${hIn}`;
+        }
+        figma.notify('Added size to selected frame names.');
     }
     else if (msg.type === 'screen-info' && msg.screenInfo) {
         // Received screen info from UI (which got it from Grid app)

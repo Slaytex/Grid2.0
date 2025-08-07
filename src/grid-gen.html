@@ -273,6 +273,31 @@
             }
         });
 
+        let currentWindowToResize = null;
+
+        function openResizeDialog(windowEl) {
+            currentWindowToResize = windowEl;
+            const overlay = document.getElementById('resize-dialog-overlay');
+            const widthInput = document.getElementById('resize-width-input');
+            const heightInput = document.getElementById('resize-height-input');
+
+            const currentWidthInches = parseFloat(windowEl.style.width.replace('px', '')) / window.gridSystem.gridSpacingX;
+            const currentHeightInches = parseFloat(windowEl.style.height.replace('px', '')) / window.gridSystem.gridSpacingY;
+
+            widthInput.value = currentWidthInches.toFixed(1);
+            heightInput.value = currentHeightInches.toFixed(1);
+
+            overlay.style.display = 'flex';
+        }
+
+        function closeResizeDialog() {
+            const overlay = document.getElementById('resize-dialog-overlay');
+            overlay.style.display = 'none';
+            currentWindowToResize = null;
+        }
+
+
+
         // Window management
         let windows = [];
         let presets = [];  // Store presets separately from active windows
@@ -334,6 +359,8 @@
             const container = document.getElementById('container');
             const windowEl = document.createElement('div');
             windowEl.className = 'figma-window';
+            windowEl.dataset.frameName = config.name;
+            
             
             // Add size indicator
             const sizeIndicator = document.createElement('div');
@@ -408,6 +435,15 @@
                 }
             };
             windowEl.appendChild(refreshButton);
+
+            // Add Resize button
+            const resizeButton = document.createElement('button');
+            resizeButton.className = 'window-resize-button';
+            resizeButton.innerHTML = '<img src="./assets/resize-icon.svg" alt="Resize">';
+            resizeButton.onclick = () => {
+                openResizeDialog(windowEl);
+            };
+            windowEl.appendChild(resizeButton);
 
             // Add resize handle
             const resizeHandle = document.createElement('div');
@@ -587,6 +623,8 @@
                 const widthInches = parseFloat(config.width).toFixed(1);
                 const heightInches = parseFloat(config.height).toFixed(1);
                 urlText.textContent = `${widthInches}×${heightInches}"`;
+                // Add a name property to the config for tracking
+                config.name = `Preset ${widthInches}x${heightInches}`;
                 urlText.style.fontSize = '12px';
                 urlText.style.flexGrow = '1';
                 windowItem.appendChild(urlText);
@@ -598,7 +636,21 @@
                 launchBtn.style.width = 'auto';
                 launchBtn.style.fontSize = '12px';
                 launchBtn.onclick = () => {
-                    createWindow({...config, x: undefined, y: undefined});
+                    const activeWindow = getActiveWindow();
+                    if (activeWindow) {
+                        const newWidthInches = parseFloat(config.width);
+                        const newHeightInches = parseFloat(config.height);
+
+                        if (!isNaN(newWidthInches) && !isNaN(newHeightInches)) {
+                            const newPxWidth = newWidthInches * window.gridSystem.gridSpacingX;
+                            const newPxHeight = newHeightInches * window.gridSystem.gridSpacingY;
+
+                            activeWindow.style.width = newPxWidth + 'px';
+                            activeWindow.style.height = newPxHeight + 'px';
+                        }
+                    } else {
+                        createWindow({...config, x: undefined, y: undefined});
+                    }
                 };
                 windowItem.appendChild(launchBtn);
 
@@ -634,9 +686,11 @@
         }
 
         // Update spawn button handler to use inches
+        let emptyFrameCounter = 0;
         document.getElementById('spawn-button').addEventListener('click', () => {
             // Get values directly in inches
             const config = {
+                name: `Empty Frame ${++emptyFrameCounter}`,
                 url: document.getElementById('url-input').value,
                 width: parseFloat(document.getElementById('width-input').value),
                 height: parseFloat(document.getElementById('height-input').value),
@@ -677,7 +731,7 @@
 
         const brightnessSlider = document.getElementById('brightness-slider');
         const toggleGridBtn = document.getElementById('toggle-grid');
-        const body = document.body;
+
         let isGridVisible = true;
 
         function updateGridLines(brightness) {
@@ -780,7 +834,7 @@
         brightnessSlider.addEventListener('input', (e) => {
             const brightness = e.target.value;
             const brightnessValue = brightness / 100;
-            body.style.backgroundColor = `rgba(255, 255, 255, ${brightnessValue})`;
+            document.body.style.backgroundColor = `rgba(255, 255, 255, ${brightnessValue})`;
             
             // Update grid with new brightness value
             updateGridLines(brightness);
@@ -794,6 +848,24 @@
             
             // Ensure grid is visible initially
             isGridVisible = true;
+
+            document.getElementById('apply-resize-button').addEventListener('click', () => {
+                if (currentWindowToResize) {
+                    const newWidthInches = parseFloat(document.getElementById('resize-width-input').value);
+                    const newHeightInches = parseFloat(document.getElementById('resize-height-input').value);
+
+                    if (!isNaN(newWidthInches) && !isNaN(newHeightInches)) {
+                        const newPxWidth = newWidthInches * window.gridSystem.gridSpacingX;
+                        const newPxHeight = newHeightInches * window.gridSystem.gridSpacingY;
+
+                        currentWindowToResize.style.width = newPxWidth + 'px';
+                        currentWindowToResize.style.height = newPxHeight + 'px';
+                    }
+                }
+                closeResizeDialog();
+            });
+
+            document.getElementById('cancel-resize-button').addEventListener('click', closeResizeDialog);
         });
 
         function showControls() {
@@ -805,7 +877,7 @@
             controlPanel.classList.add('visible');
             
             // Set initial background and grid state
-            body.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+            document.body.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
             updateGridLines(50); // This will now draw the grid since isGridVisible is true
         }
         
@@ -824,6 +896,7 @@
             const container = document.getElementById('container');
             const windowEl = document.createElement('div');
             windowEl.className = 'figma-window image-window';
+            windowEl.dataset.frameName = config.name; // Add this line
             
             // Convert directly to pixels using grid spacing
             const pxWidth = config.width * window.gridSystem.gridSpacingX;
@@ -1109,6 +1182,7 @@
                 launchBtn.style.fontSize = '12px';
                 launchBtn.onclick = () => {
                     createWindow({
+                        name: frame.name,
                         width: frame.width,
                         height: frame.height,
                         url: frame.url || document.getElementById('url-input').value,
@@ -1122,13 +1196,59 @@
             });
         }
 
-        // Add message listener for Figma plugin communication
-        window.onmessage = (event) => {
-            // Verify the message is from Figma
-            if (event.data.pluginMessage && event.data.pluginMessage.type === 'figma-frames') {
-                handleFigmaFrames(event.data.pluginMessage.frames);
+        // Subscribe to live frame messages from main (WebSocket -> main -> renderer)
+        window.electron.onFigmaFrameSelected((frame) => {
+            // Merge/update entry in Figma Frames list
+            const container = document.getElementById('figma-frames-container');
+            // Simple append (could de-duplicate by name)
+            const frameItem = document.createElement('div');
+            frameItem.className = 'figma-frame-item';
+            frameItem.style.padding = '8px';
+            frameItem.style.marginBottom = '4px';
+            frameItem.style.background = 'rgba(50, 50, 50, 0.5)';
+            frameItem.style.borderRadius = '4px';
+            frameItem.style.display = 'flex';
+            frameItem.style.justifyContent = 'space-between';
+            frameItem.style.alignItems = 'center';
+
+            const frameInfo = document.createElement('div');
+            frameInfo.textContent = `${frame.name} (${frame.widthInches.toFixed(1)}×${frame.heightInches.toFixed(1)}")`;
+            frameInfo.style.fontSize = '12px';
+            frameInfo.style.flexGrow = '1';
+            frameItem.appendChild(frameInfo);
+
+            const launchBtn = document.createElement('button');
+            launchBtn.textContent = 'Launch';
+            launchBtn.style.padding = '4px 8px';
+            launchBtn.style.marginLeft = '8px';
+            launchBtn.style.width = 'auto';
+            launchBtn.style.fontSize = '12px';
+            launchBtn.onclick = () => {
+                createWindow({
+                    name: frame.name,
+                    width: frame.widthInches,
+                    height: frame.heightInches,
+                    url: 'https://www.figma.com/mirror',
+                    x: undefined,
+                    y: undefined
+                });
+            };
+            frameItem.appendChild(launchBtn);
+
+            container.appendChild(frameItem);
+        });
+
+        // Listen for resize-frame IPC from main via preload bridge
+        window.electron.onResizeFrame((frame) => {
+            const windowEl = document.querySelector(`[data-frame-name="${frame.name}"]`);
+            if (windowEl) {
+                const newPxWidth = frame.widthInches * window.gridSystem.gridSpacingX;
+                const newPxHeight = frame.heightInches * window.gridSystem.gridSpacingY;
+
+                windowEl.style.width = newPxWidth + 'px';
+                windowEl.style.height = newPxHeight + 'px';
             }
-        };
+        });
 
         function toggleBorder() {
             borderEnabledState = !borderEnabledState;
@@ -1147,5 +1267,22 @@
             });
         }
     </script>
+    <div id="resize-dialog-overlay" class="resize-dialog-overlay" style="display: none;">
+        <div class="resize-dialog">
+            <h3>Resize Frame</h3>
+            <div class="input-group">
+                <label for="resize-width-input">Width (in)</label>
+                <input type="number" id="resize-width-input" min="1">
+            </div>
+            <div class="input-group">
+                <label for="resize-height-input">Height (in)</label>
+                <input type="number" id="resize-height-input" min="1">
+            </div>
+            <div class="button-group">
+                <button id="cancel-resize-button">Cancel</button>
+                <button id="apply-resize-button">Resize</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 

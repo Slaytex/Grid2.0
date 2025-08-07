@@ -218,6 +218,19 @@ if (!gotTheLock) {
               console.log('[Main Process] Received get-screen-info request. Calling broadcastScreenInfo...')
               await broadcastScreenInfo()
             }
+            // Live frame registration
+            else if (message.type === 'live-frame') {
+              if (mainWindow) {
+                // forward to renderer to list under Figma Frames
+                mainWindow.webContents.send('figma-frame-selected', message.frame)
+              }
+            }
+            // Handle resize frame command
+            else if (message.type === 'resize-frame') {
+                if (mainWindow) {
+                    mainWindow.webContents.send('resize-frame', message.frame);
+                }
+            }
           } catch (error) {
             console.error('[Main Process] Error handling WebSocket message:', error, 'Raw data:', data.toString())
           }

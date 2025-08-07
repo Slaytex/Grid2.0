@@ -19,10 +19,18 @@ window.gridSystem = null;
 // At the top of the file, after any other declarations
 window.animationInProgress = false;
 
+let activeWindow = null;
+
 // Function to bring a window to the front
 function bringToFront(windowEl) {
     zIndexCounter++;
     windowEl.style.zIndex = zIndexCounter;
+    activeWindow = windowEl;
+}
+
+// Function to get the active window
+function getActiveWindow() {
+    return activeWindow;
 }
 
 // Get the DPI from the main process

@@ -57,5 +57,12 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.on('frame-controls-state-updated', (event, { isVisible }) => {
             callback(isVisible);
         });
+    },
+
+    // Listen for resize-frame messages from main process
+    onResizeFrame: (callback) => {
+        ipcRenderer.on('resize-frame', (event, frame) => {
+            callback(frame);
+        });
     }
 }) 

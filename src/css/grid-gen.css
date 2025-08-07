@@ -171,7 +171,7 @@ body.app-ready {
     border-style: solid;
     border-color: transparent;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    transition: border-width 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, border-radius 0.5s ease;
+    transition: width 0.3s ease, height 0.3s ease, left 0.3s ease, top 0.3s ease, border-width 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease, border-radius 0.5s ease;
     z-index: 100; /* Base z-index for windows */
 }
 
@@ -676,7 +676,8 @@ button:hover {
 .window-drag-handle,
 .window-close-button,
 .window-save-button,
-.window-refresh-button {
+.window-refresh-button,
+.window-resize-button {
   width: 30px !important;
   height: 30px !important;
   border-radius: 50% !important;
@@ -709,6 +710,11 @@ button:hover {
   background: rgba(67, 160, 71, 0.7) !important; /* Greenish for refresh */
 }
 
+.window-resize-button {
+    left: 130px !important;
+    background: rgba(0, 122, 255, 0.7) !important;
+}
+
 .window-close-button {
   right: 10px !important;
   background: rgba(220, 53, 53, 0.7) !important;
@@ -717,7 +723,8 @@ button:hover {
 /* Button image styling */
 .window-drag-handle img,
 .window-save-button img,
-.window-refresh-button img, /* Added refresh button */
+.window-refresh-button img,
+.window-resize-button img,
 .window-close-button img {
   width: 16px !important;
   height: 16px !important;
@@ -728,11 +735,13 @@ button:hover {
 .figma-window.window-controls-visible .window-drag-handle,
 .figma-window.window-controls-visible .window-close-button,
 .figma-window.window-controls-visible .window-save-button,
-.figma-window.window-controls-visible .window-refresh-button, /* Added refresh button */
+.figma-window.window-controls-visible .window-refresh-button,
+.figma-window.window-controls-visible .window-resize-button,
 .figma-window.window-controls-visible .resize-handle,
 .image-window.window-controls-visible .window-drag-handle,
 .image-window.window-controls-visible .window-close-button,
-.image-window.window-controls-visible .window-refresh-button, /* Added refresh button */
+.image-window.window-controls-visible .window-refresh-button,
+.image-window.window-controls-visible .window-resize-button,
 .image-window.window-controls-visible .resize-handle {
   opacity: 0.8 !important;
   pointer-events: auto !important;
@@ -743,10 +752,12 @@ button:hover {
 .figma-window:not(.window-controls-visible) .window-close-button,
 .figma-window:not(.window-controls-visible) .window-save-button, 
 .figma-window:not(.window-controls-visible) .window-refresh-button,
+.figma-window:not(.window-controls-visible) .window-resize-button,
 .figma-window:not(.window-controls-visible) .resize-handle,
 .image-window:not(.window-controls-visible) .window-drag-handle,
 .image-window:not(.window-controls-visible) .window-close-button,
 .image-window:not(.window-controls-visible) .window-refresh-button,
+.image-window:not(.window-controls-visible) .window-resize-button,
 .image-window:not(.window-controls-visible) .resize-handle {
   opacity: 0 !important;
   pointer-events: none !important; /* Prevent all mouse interaction */
@@ -756,7 +767,8 @@ button:hover {
 /* Button hover effects (keep these for when controls are visible) */
 .window-drag-handle:hover,
 .window-close-button:hover,
-.window-refresh-button:hover, /* Added refresh button */
+.window-refresh-button:hover,
+.window-resize-button:hover,
 .window-save-button:hover {
   opacity: 1 !important;
   transform: scale(1.1) !important;
@@ -770,11 +782,63 @@ button:hover {
   background: rgba(76, 175, 80, 0.9) !important; /* Darker green on hover */
 }
 
+.window-resize-button:hover {
+    background: rgba(0, 122, 255, 0.9) !important;
+}
+
 .window-close-button:hover {
   background: rgba(255, 68, 68, 0.5) !important;
 }
 
 /* ===== END WINDOW CONTROLS ===== */
+
+/* ===== RESIZE DIALOG ===== */
+.resize-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.resize-dialog {
+    background: #2d2d2d;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    width: 250px;
+}
+
+.resize-dialog h3 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.resize-dialog .input-group {
+    margin-bottom: 15px;
+}
+
+.resize-dialog .input-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.resize-dialog .input-group input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.resize-dialog .button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
 
 /* Window controls for image windows */
 .image-window .window-drag-handle,
