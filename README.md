@@ -1,8 +1,8 @@
 # Grid 2.0
 
-Grid 2.0 is a powerful desktop application that works in conjunction with a Figma plugin to streamline the process of creating and managing grid layouts in Figma. The system consists of two main components:
-1. A desktop application (Grid App)
-2. A Figma plugin (Grid Plugin)
+Grid 2.0 is an Electron desktop app plus a Figma plugin that lets you:
+- Export selected Figma frames as PNGs to the app
+- Drive “live” frames (size-only) displayed via `figma.com/mirror`, and resize them from Figma
 
 ## Repository Information
 - GitHub Repository: [Grid2.0](https://github.com/Slaytex/Grid2.0)
@@ -16,7 +16,7 @@ Grid 2.0 is a powerful desktop application that works in conjunction with a Figm
 - macOS (for running the desktop app)
 - TypeScript (for development)
 
-## Installation
+## Setup
 
 ### Development Environment Setup
 
@@ -44,7 +44,7 @@ npm install --save-dev @figma/plugin-typings
 cd ..
 ```
 
-### Desktop App Installation
+### Desktop App
 
 1. Start the application in development mode:
 ```bash
@@ -58,7 +58,7 @@ npm run dist
 
 The built application will be available in the `dist` directory.
 
-### Figma Plugin Installation
+### Figma Plugin
 
 1. Build the plugin:
 ```bash
@@ -66,7 +66,7 @@ cd figma_plugin
 npm run build
 ```
 
-The built plugin will be available in the `figma_plugin_dist` directory.
+This compiles `code.ts` to `code.js`. To import into Figma: Plugins → Development → Import from manifest, choose `figma_plugin/manifest.json`.
 
 ## Project Structure
 
@@ -89,24 +89,15 @@ grid/
 
 ### Figma Plugin
 
-1. Install the plugin in Figma
-2. Launch Grid App first
-3. In Figma, name your frames using one of these formats:
-   - `frame-name]#code#` (using predefined screen codes)
-   - `frame-name#widthxheight#` (using custom dimensions)
+Buttons (bottom 50x50):
+- LABEL SIZE: adds size to selected frames’ names using 160dp baseline (e.g., `welcome` → `welcome#12x10`). If duplicates, auto numbers (`welcome-01`, `welcome-02`).
+- SEND PNG: exports selected frames as PNGs to Grid.
+- SEND LIVE: registers a live frame (size-only) with Grid. If the selected frame is `name#live`, the button highlights.
+- UPDATE SIZE: resizes the matching live window in Grid to the current selected frame’s size.
 
-Available screen codes:
-- SA: 360x640
-- SB: 390x844
-- SC: 412x915
-- LI: 744x1133
-- WE: 1024x768
-- WS: 1440x900
-- WF: 1920x1080
-
-4. Click the refresh icon in the plugin
-5. Select the frames you want to process
-6. Click send to process the frames
+Notes:
+- Inches conversion uses 160dp: `inches = pixels / 160`.
+- Grid lists incoming “Figma Frames” with truncated names + dimensions, and per-item actions (Launch/Delete).
 
 ## Development
 
@@ -146,10 +137,7 @@ This will create:
 cd figma_plugin
 npm run build
 ```
-
-This will create:
-- A distribution-ready plugin in `figma_plugin_dist`
-- A ZIP file ready for Figma plugin submission
+Produces `code.js`. Packaging into a zip is handled via helper scripts when needed.
 
 ## Troubleshooting
 
