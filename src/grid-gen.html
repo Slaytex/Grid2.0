@@ -1198,30 +1198,56 @@
 
         // Subscribe to live frame messages from main (WebSocket -> main -> renderer)
         window.electron.onFigmaFrameSelected((frame) => {
-            // Merge/update entry in Figma Frames list
             const container = document.getElementById('figma-frames-container');
-            // Simple append (could de-duplicate by name)
-            const frameItem = document.createElement('div');
-            frameItem.className = 'figma-frame-item';
-            frameItem.style.padding = '8px';
-            frameItem.style.marginBottom = '4px';
-            frameItem.style.background = 'rgba(50, 50, 50, 0.5)';
-            frameItem.style.borderRadius = '4px';
-            frameItem.style.display = 'flex';
-            frameItem.style.justifyContent = 'space-between';
-            frameItem.style.alignItems = 'center';
+            const item = document.createElement('div');
+            item.className = 'figma-frame-item';
+            item.style.padding = '8px';
+            item.style.marginBottom = '4px';
+            item.style.background = 'rgba(50, 50, 50, 0.5)';
+            item.style.borderRadius = '4px';
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            item.style.alignItems = 'stretch';
+            item.style.gap = '10px';
 
-            const frameInfo = document.createElement('div');
-            frameInfo.textContent = `${frame.name} (${frame.widthInches.toFixed(1)}×${frame.heightInches.toFixed(1)}")`;
-            frameInfo.style.fontSize = '12px';
-            frameInfo.style.flexGrow = '1';
-            frameItem.appendChild(frameInfo);
+            // Left: name (truncated) and fixed-width dims
+            const left = document.createElement('div');
+            left.style.display = 'flex';
+            left.style.alignItems = 'center';
+            left.style.gap = '8px';
+            left.style.minWidth = '0';
+
+            const nameDiv = document.createElement('div');
+            nameDiv.textContent = frame.name;
+            nameDiv.style.fontSize = '12px';
+            nameDiv.style.flex = '1 1 auto';
+            nameDiv.style.minWidth = '0';
+            nameDiv.style.overflow = 'hidden';
+            nameDiv.style.textOverflow = 'ellipsis';
+            nameDiv.style.whiteSpace = 'nowrap';
+
+            const dimsDiv = document.createElement('div');
+            dimsDiv.textContent = `(${frame.widthInches.toFixed(1)}×${frame.heightInches.toFixed(1)}")`;
+            dimsDiv.style.fontSize = '12px';
+            dimsDiv.style.flex = '0 0 auto';
+            dimsDiv.style.whiteSpace = 'nowrap';
+            dimsDiv.style.opacity = '0.9';
+
+            left.appendChild(nameDiv);
+            left.appendChild(dimsDiv);
+            item.appendChild(left);
+
+            // Right: actions in a vertical column
+            const actions = document.createElement('div');
+            actions.style.display = 'flex';
+            actions.style.flexDirection = 'column';
+            actions.style.gap = '6px';
+            actions.style.alignItems = 'flex-end';
 
             const launchBtn = document.createElement('button');
             launchBtn.textContent = 'Launch';
             launchBtn.style.padding = '4px 8px';
-            launchBtn.style.marginLeft = '8px';
-            launchBtn.style.width = 'auto';
+            launchBtn.style.width = '90px';
             launchBtn.style.fontSize = '12px';
             launchBtn.onclick = () => {
                 createWindow({
@@ -1233,9 +1259,19 @@
                     y: undefined
                 });
             };
-            frameItem.appendChild(launchBtn);
 
-            container.appendChild(frameItem);
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.style.padding = '4px 8px';
+            deleteBtn.style.width = '90px';
+            deleteBtn.style.fontSize = '12px';
+            deleteBtn.onclick = () => item.remove();
+
+            actions.appendChild(launchBtn);
+            actions.appendChild(deleteBtn);
+            item.appendChild(actions);
+
+            container.appendChild(item);
         });
 
         // Listen for resize-frame IPC from main via preload bridge
