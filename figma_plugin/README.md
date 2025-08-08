@@ -1,143 +1,56 @@
-# Figma Plugin UI Test
+# Grid 2.0 – Figma Plugin
 
-This is a test environment for the Figma plugin UI. Open `index.html` in a browser to test the interface.
+This plugin connects Figma to the Grid 2.0 desktop app for two workflows:
+- Export PNGs of selected frames to Grid
+- Control “live” frames (size-only) displayed via figma.com/mirror
 
-## Features
-- Connection status indicator
-- Frame list with checkboxes
-- Send button with states (normal, sending, success, error)
-- Debug console
+## Requirements
+- Figma desktop app
+- Grid 2.0 app running (WebSocket on `localhost:8080`)
+- Node 16+, npm, TypeScript (for building)
 
-## Development Setup
-
-### Prerequisites
-- Node.js (v16 or higher)
-- npm (Node Package Manager)
-- TypeScript (installed globally)
-- Figma Desktop App
-
-### Installation Steps
-
-1. Install TypeScript globally:
-```bash
-npm install -g typescript
-```
-
-2. Install project dependencies:
+## Build
 ```bash
 npm install
-```
-
-3. Install Figma plugin typings:
-```bash
-npm install --save-dev @figma/plugin-typings
-```
-
-### Development with Visual Studio Code
-
-1. Download and install Visual Studio Code: https://code.visualstudio.com/
-2. Open the `figma_plugin` directory in Visual Studio Code
-3. Compile TypeScript to JavaScript:
-   - Run the "Terminal > Run Build Task..." menu item
-   - Select "npm: watch"
-   - This needs to be done every time you reopen Visual Studio Code
-
-The JavaScript file will be regenerated automatically every time you save your TypeScript files.
-
-## TypeScript Development
-
-TypeScript adds type annotations to variables, allowing code editors to provide information about the Figma API while writing code and help catch bugs early.
-
-For more information about TypeScript, visit https://www.typescriptlang.org/
-
-### TypeScript Configuration
-The project includes a `tsconfig.json` file that configures TypeScript compilation settings. Key features:
-- Strict type checking
-- ES6 module support
-- Source map generation for debugging
-
-### Figma Plugin API Types
-The project uses `@figma/plugin-typings` to provide type definitions for the Figma Plugin API. This enables:
-- Autocomplete for Figma API methods
-- Type checking for plugin code
-- Better IDE support
-
-## Building the Plugin
-
-To build the plugin for distribution:
-
-```bash
 npm run build
 ```
+Outputs `code.js`. A packaged zip may be created at the repository root by the app tooling.
 
-This will:
-1. Compile TypeScript files to JavaScript
-2. Generate source maps
-3. Create a distribution-ready plugin
+## Install in Figma (from manifest)
+1. In Figma: Plugins → Development → Import plugin from manifest…
+2. Choose `figma_plugin/manifest.json`
 
-## Testing
+## UI actions (bottom 50x50 buttons)
+- LABEL SIZE: Adds size to selected frames’ names using 160dp baseline
+  - Example: `welcome` → `welcome#12x10` (inches). If duplicates, auto numbers `welcome-01`, `welcome-02`…
+- SEND PNG: Exports selected, named frames (from list) as PNGs to the Grid app
+- SEND LIVE: Sends a “live” frame (size only) to Grid. If the selected frame is named `name#live`, this button is highlighted
+- UPDATE SIZE: Sends the current selected frame’s size to Grid to resize the matching live window
 
-1. Open `index.html` in a browser to test the UI
-2. Use the debug console for troubleshooting
-3. Check the connection status indicator
-4. Test frame selection and sending functionality
+Notes
+- Inches conversion uses 160dp: `inches = pixels / 160`
+- For live windows, the Grid app lists received frames under “Figma Frames”. Each item has:
+  - Truncated name + fixed-width dimensions
+  - Vertical actions: Launch (opens a figma.com/mirror window at that size) and Delete (remove listing)
+
+## Typical flows
+PNG
+1) Select frames → click the refresh icon in the plugin
+2) Select desired items → SEND PNG
+
+Live
+1) Select the frame you want live; name it `name#live` (optional but recommended)
+2) Click SEND LIVE → frame shows in Grid’s Figma Frames list
+3) Click Launch in Grid to open a live window (figma.com/mirror)
+4) Resize in Figma → click UPDATE SIZE to animate the window to the new size
 
 ## Troubleshooting
+- Not connected: Ensure Grid 2.0 is running; the status light should be green
+- Nothing appears in list: Verify selection and naming (after LABEL SIZE or valid formats)
+- Size mismatch: Remember live sizing uses 160dp; rename via LABEL SIZE if needed
 
-Common issues and solutions:
+## Development
+- Main logic: `code.ts`
+- UI: `ui.html`
+- Manifest: `manifest.json`
 
-1. **TypeScript Compilation Errors**
-   - Ensure TypeScript is installed globally
-   - Check for syntax errors in `.ts` files
-   - Verify all dependencies are installed
-
-2. **UI Testing Issues**
-   - Clear browser cache if UI changes aren't visible
-   - Check console for JavaScript errors
-   - Verify all required files are present
-
-3. **Figma Plugin Issues**
-   - Ensure the plugin is properly built
-   - Check Figma's developer console
-   - Verify API permissions in manifest.json
-
-Below are the steps to get your plugin running. You can also find instructions at:
-
-  https://www.figma.com/plugin-docs/plugin-quickstart-guide/
-
-This plugin template uses Typescript and NPM, two standard tools in creating JavaScript applications.
-
-First, download Node.js which comes with NPM. This will allow you to install TypeScript and other
-libraries. You can find the download link here:
-
-  https://nodejs.org/en/download/
-
-Next, install TypeScript using the command:
-
-  npm install -g typescript
-
-Finally, in the directory of your plugin, get the latest type definitions for the plugin API by running:
-
-  npm install --save-dev @figma/plugin-typings
-
-If you are familiar with JavaScript, TypeScript will look very familiar. In fact, valid JavaScript code
-is already valid Typescript code.
-
-TypeScript adds type annotations to variables. This allows code editors such as Visual Studio Code
-to provide information about the Figma API while you are writing code, as well as help catch bugs
-you previously didn't notice.
-
-For more information, visit https://www.typescriptlang.org/
-
-Using TypeScript requires a compiler to convert TypeScript (code.ts) into JavaScript (code.js)
-for the browser to run.
-
-We recommend writing TypeScript code using Visual Studio code:
-
-1. Download Visual Studio Code if you haven't already: https://code.visualstudio.com/.
-2. Open this directory in Visual Studio Code.
-3. Compile TypeScript to JavaScript: Run the "Terminal > Run Build Task..." menu item,
-    then select "npm: watch". You will have to do this again every time
-    you reopen Visual Studio Code.
-
-That's it! Visual Studio Code will regenerate the JavaScript file every time you save.
